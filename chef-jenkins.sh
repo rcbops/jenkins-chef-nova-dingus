@@ -1,13 +1,13 @@
 #!/bin/bash -x
 
 # likely need overrides
-CREDENTIALS=${CREDENTIALS:-./nova-credentials}
 CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-fe9bbecf-60ee-4c92-a229-15a119570a87}
 JOBID=${JOBID:-${RANDOM}}
 CHEF_FLAVOR=${CHEF_FLAVOR:-2}
 INSTANCE_FLAVOR=${INSTANCE_FLAVOR:-2}
 SOURCE_DIR=${SOURCE_DIR:-$(dirname $(readlink -f $0))}
+CREDENTIALS=${CREDENTIALS:-${SOURCE_DIR}/files/nova-credentials}
 PRIVKEY=${PRIVKEY:-${SOURCE_DIR}/files/id_jenkins}
 KEYNAME=${KEYNAME:-jenkins}
 
@@ -395,7 +395,7 @@ function fc_do() {
 
     echo "fc_do: executing task ${OPERANT_TASK} for server ${OPERANT_SERVER} as PID $$"
 
-    cat fakeconfig.sh > ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
+    cat ${SOURCE_DIR}/files/fakeconfig.sh > ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     for action in "${FC_TASKS[@]}"; do
         echo $action >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
