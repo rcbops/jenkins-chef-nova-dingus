@@ -2,14 +2,14 @@
 
 # likely need overrides
 CREDENTIALS=${CREDENTIALS:-./nova-credentials}
-PRIVKEY=${PRIVKEY:-id_jenkins}
-KEYNAME=${KEYNAME:-jenkins}
 CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-fe9bbecf-60ee-4c92-a229-15a119570a87}
 JOBID=${JOBID:-${RANDOM}}
 CHEF_FLAVOR=${CHEF_FLAVOR:-2}
 INSTANCE_FLAVOR=${INSTANCE_FLAVOR:-2}
-SOURCE_DIR=${SOURCE_DIR:-$(readlink -f $(basename $0))
+SOURCE_DIR=${SOURCE_DIR:-$(dirname $(readlink -f $0))}
+PRIVKEY=${PRIVKEY:-${SOURCE_DIR}/files/id_jenkins}
+KEYNAME=${KEYNAME:-jenkins}
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
@@ -27,6 +27,7 @@ SSH_TIMEOUT=${SSH_TIMEOUT:-240}
 # currently running background tasks
 declare -A PIDS=()
 OPERANT_SERVER=""
+OPERANT_TASK=""
 declare -a FC_TASKS
 
 function cleanup() {
@@ -41,7 +42,7 @@ function cleanup() {
         kill -TERM ${pid}
     done
 
-    collect_tasks
+    collect_tasks viciously
 
 
     if [ -e ${TMPDIR}/nodes ]; then
@@ -60,8 +61,11 @@ function cleanup() {
 function init() {
     trap cleanup ERR EXIT
 
+    if [ ${DEBUG:-0} -eq 1 ]; then
+        set -x
+    fi
+
     shopt -s nullglob
-    set -e
 
     export TMPDIR=$(mktemp -d)
     mkdir -p ${TMPDIR}/nodes
@@ -89,13 +93,17 @@ function boot_and_wait() {
     local flavor=$3
     local ip=""
 
-    nova boot --flavor=${flavor} --image=${image} --key_name=${KEYNAME} ${name}
+    echo "Booting ${name} with image ${image} using flavor ${flavor} on PID $$"
+    nova boot --flavor=${flavor} --image=${image} --key_name=${KEYNAME} ${name} > /dev/null 2>&1
 
     local count=0
 
     while [ "$ip" = "" ] && (( count < 30 )); do
         sleep 2
         ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | awk '{ print $5 }')
+        if [ "$ip" = "|" ]; then
+            ip=""
+        fi
         count=$((count + 1))
     done
 
@@ -111,18 +119,16 @@ function boot_and_wait() {
 EOF
 
     count=0
-    while [ ! ACTIVE = $(nova show ${name} | grep status | awk '{print $4}') ] && (( count < $SPINUP_TIMEOUT )); do
+    while [ ! ACTIVE = $(nova show ${name} | grep status | awk '{print $4}') ] && (( count < ${SPINUP_TIMEOUT} )); do
         sleep 1
         count=$((count + 1))
     done
 
-    [ $count -lt ${SPINUP_TIMEOUT} ]
+    [ ${count} -lt ${SPINUP_TIMEOUT} ]
 }
 
 function boot_cluster() {
     # $1... - cluster members in name:image:flavor format
-
-    echo "------------------------------- KICKING CLUSTER"
 
     for host in "$@"; do
         declare -a hostinfo
@@ -133,7 +139,6 @@ function boot_cluster() {
         local flavor=${hostinfo[2]}
 
         background_task "boot_and_wait ${image} ${name} ${flavor}"
-        echo "Booting ${hostinfo[0]} with image ${hostinfo[1]} and flavor ${hostinfo[2]} as pid $!"
     done
 
     collect_tasks
@@ -151,13 +156,11 @@ function wait_for_ssh() {
     # $1 - ip
     local ip=$1
 
-    echo "--------------------------- WAITING FOR SSH ON ${ip}"
-    timeout ${SSH_TIMEOUT} sh -c "while ! nc ${ip} 22 -w 1 -q 0 < /dev/null;do :; done"
+    timeout ${SSH_TIMEOUT} sh -c "while ! nc ${ip} 22 -w 1 -q 0 < /dev/null > /dev/null;do :; done"
     sleep 2
 }
 
 function wait_for_cluster_ssh() {
-    echo "------------------------------- WAITING FOR CLUSTER SSH"
     for host in "$@"; do
         declare -a hostinfo
         hostinfo=(${host//:/ })
@@ -172,20 +175,46 @@ function wait_for_cluster_ssh() {
 }
 
 function background_task() {
-#    eval "(exec 2>&1; exec 1>/tmp/$$; exec $1 )" &
-#    exec "$@ &"
     outfile=$(mktemp)
+    exec 99>&1
     eval "$@ > ${outfile} 2>&1 &"
-    PIDS["$!"]=${outfile}
+    local pid=$!
+    echo "Backgrounded $@ as PID ${pid}" >&99
+    exec 99>&-
+    PIDS["${pid}"]=${outfile}
 }
 
+# Passing any argument disables the output printing
 function collect_tasks() {
     local failcount=0
+    local result=0
+    local oldtrap=""
+
+    echo "Collecting background tasks..."
+    # allow a recently started task to schedule
+    sleep 1
+
     for pid in ${!PIDS[@]}; do
-        echo "Waiting for pid ${pid}"
-        wait $pid || failcount=$((failcount + 1))
-        echo "Collected pid ${pid} with result code $?.  Output:"
-        cat ${PIDS[$pid]}
+        oldtrap=$(trap -p ERR)
+        trap - ERR
+
+        wait $pid
+        result=$?
+
+        eval "${oldtrap}"
+        echo "Collected pid ${pid} with result code ${result}."
+
+        if [ ${result} -ne 0 ]; then
+            failcount=$(( failcount + 1 ))
+        fi
+
+        if [ ${result} -ne 0 ] || [ ${DEBUG:-0} -ne 0 ]; then
+            if [ -z $1 ]; then  # don't show this if we passed an argument (final cleanup)
+                echo "Output: "
+                cat ${PIDS[$pid]}
+            fi
+        fi
+
         rm ${PIDS[$pid]}
     done
 
@@ -211,6 +240,7 @@ function prepare_chef() {
             cache_type               'BasicFile'
             cache_options( :path => '/${TMPDIR}/chef/${server}/checksums' )
 EOF
+    fi
 }
 
 function create_chef_environment() {
@@ -223,22 +253,77 @@ function create_chef_environment() {
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
-    EDITOR=/bin/true knife create enironment ${environment} -c ${knife}
+    EDITOR=/bin/true knife environment from file ${SOURCE_DIR}/files/${environment}.json -c ${knife}
 }
+
+function set_environment() {
+    # $1 - chef server
+    # $2 - node (friendly name)
+    # $3 - environment name
+    local server=$1
+    local node=$2
+    local environment=$3
+
+    prepare_chef ${server}
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    local full_node_name=${JOBID}-${node}
+    local chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
+
+    echo "Setting ${node} to environment ${environment}"
+
+#    knife node show ${chef_node_name} -c ${knife}
+    knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
+    sed -i -e "s/_default/${environment}/" ${TMPDIR}/${chef_node_name}.json
+    sed -i -e 's/^{$/{"json_class": "Chef::Node",/' ${TMPDIR}/${chef_node_name}.json
+    EDITOR=/bin/true knife node from file ${TMPDIR}/${chef_node_name}.json -c ${knife}
+#    knife node show ${chef_node_name} -c ${knife}
+}
+
+function run_tests() {
+    # $1 - exerstack/kong server
+    # $2 - version/component
+
+    local server=$1
+    local version=$2
+
+    x_with_server "running tests" $1 <<-EOF
+        cd /opt/kong
+        ./run_tests.sh --version ${version} --nova
+
+        cd /opt/exerstack
+        ./exercise.sh ${version} euca.sh glance.sh keystone.sh nova-cli.sh
+EOF
+
+    fc_do
+}
+
 
 function role_add() {
     # $1 - chef server
     # $2 - node (friendly name)
     # $3 - role
-}
+    local server=$1
+    local node=$2
+    local role=$3
 
+    prepare_chef ${server}
+    local knife=${TMPDIR}/chef/${server}/knife.rb
 
-function with_server() {
-    OPERANT_SERVER=$1
+    full_node_name=${JOBID}-${node}
+    chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
+
+    echo "Adding role ${role} to ${chef_node_name}"
+
+    knife node run_list add ${chef_node_name} "${role}" -c ${knife} > /dev/null
 }
 
 function x_with_server() {
-    OPERANT_SERVER=$1
+    OPERANT_SERVER=$2
+    fc_reset_tasks
+    OPERANT_TASK=$1
+
+    echo "Creating fc_do task for ${OPERANT_TASK}"
     while read -r line; do
         fc_add_task ${line}
     done
@@ -246,10 +331,15 @@ function x_with_server() {
 
 function x_with_cluster() {
     local host
+    declare -a tasks
+    local task_description="$1"
+    shift
 
-    fc_reset_tasks
+    echo "Running cluster task \"${task_description}\""
+    tasks=()
+
     while read -r line; do
-        fc_add_task ${line}
+        tasks[${#tasks[@]}]="${line}"
     done
 
     for host in "$@"; do
@@ -257,38 +347,50 @@ function x_with_cluster() {
         hostinfo=(${host//:/ })
 
         local name=${hostinfo[0]}
+        local task
 
         OPERANT_SERVER=${name}
+        fc_reset_tasks
+        fc_describe_task "${task_description}"
+        for task in "${tasks[@]}"; do
+            fc_add_task ${task}
+        done
+
+        echo "Preparing to run fc_do '${OPERANT_TASK}' on ${OPERANT_SERVER}"
         background_task "fc_do"
     done
 
     collect_tasks
+    echo "Cluster task \"${task_description}\" done"
 }
 
 function fc_add_task() {
+    if [ "$1" == "copy_file" ]; then
+        if [ -e "${SOURCE_DIR}/files/$2" ]; then
+            mkdir -p ${TMPDIR}/dirtree/${OPERANT_SERVER}
+            cp ${SOURCE_DIR}/files/$2 ${TMPDIR}/dirtree/${OPERANT_SERVER}
+        fi
+    fi
+
     FC_TASKS[${#FC_TASKS[@]}]="$@"
 }
 
 function fc_reset_tasks() {
     FC_TASKS=()
+    OPERANT_TASK="Unknown task"
+    rm -rf ${TMPDIR}/dirtree/${OPERANT_SERVER}
 }
 
-function fc_exec() {
-    fc_add_task "$@"
-}
-
-function fc_install_package() {
-    fc_add_task "install_package $@"
-}
-
-function fc_cd() {
-    fc_add_task "cd $@"
+function fc_describe_task() {
+    OPERANT_TASK=${1:-Unknown Task}
 }
 
 function fc_do() {
     local ip=$(ip_for_host ${OPERANT_SERVER})
     local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     local user="ubuntu"
+
+    echo "fc_do: executing task ${OPERANT_TASK} for server ${OPERANT_SERVER} as PID $$"
 
     cat fakeconfig.sh > ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     for action in "${FC_TASKS[@]}"; do
@@ -298,59 +400,18 @@ function fc_do() {
     cat ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
 
     scp -i ${PRIVKEY} ${sshopts} ${TMPDIR}/scripts/${OPERANT_SERVER}.sh ${user}@${ip}:/tmp/fakeconfig.sh
+
+    # copy over the template files.  Should be using rsync over ssh
+    if [ -e "${TMPDIR}/dirtree/${OPERANT_SERVER}" ]; then
+        echo "Files in dirtree:"
+        ls ${TMPDIR}/dirtree/${OPERANT_SERVER}
+        ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "mkdir /tmp/fakeconfig"
+        scp -i ${PRIVKEY} ${sshopts} ${TMPDIR}/dirtree/${OPERANT_SERVER}/* ${user}@${ip}:/tmp/fakeconfig
+    fi
+
     ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "sudo /bin/bash -x /tmp/fakeconfig.sh"
+    retval=$?
 
     fc_reset_tasks
+    return ${retval}
 }
-
-
-init
-
-declare -a cluster
-cluster=(
-    "nova-aio:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-)
-
-boot_and_wait ${CHEF_IMAGE} chef-server ${CHEF_FLAVOR}
-wait_for_ssh $(ip_for_host chef-server)
-
-x_with_server "chef-server" <<EOF
-apt-get update
-install_package git-core
-rabbitmq_fixup oociahez
-checkout_cookbooks
-upload_cookbooks
-upload_roles
-EOF
-background_task "fc_do"
-
-boot_cluster ${cluster[@]}
-wait_for_cluster_ssh ${cluster[@]}
-
-# at this point, chef server is done, cluster is up.
-# let's set up the environment.
-create_chef_environment chef-server jenkins-test
-
-# Move the validation.pem over to the clients so they
-# can register
-
-# this is kind of sloppy and non-obvious
-x_with_cluster ${cluster[@]} <<EOF
-install_chef_client
-cat > /etc/chef/validation.pem <<EOF1
-
-EOF1
-EOF
-
-
-
-
-# echo  "Done waiting for cluster ssh"
-
-# knife cookbook upload -a o cookbooks
-# EOF
-# background_task "fc_do"
-
-# x_with_cluster ${cluster[@]} <<EOF
-# apt-get update
-# EOF

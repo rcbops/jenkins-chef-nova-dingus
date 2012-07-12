@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -u
 set -e
 set -x
 
@@ -9,7 +10,7 @@ COOKBOOK_PATH=/root
 if [ -e /etc/redhat-release ]; then
     PLATFORM=redhat
 else
-    apt-get update
+    PLATFORM=debian
 fi
 
 function install_package() {
@@ -33,6 +34,7 @@ function checkout_cookbooks() {
     cd ${COOKBOOK_PATH}
     git clone https://github.com/rcbops/chef-cookbooks
     cd chef-cookbooks
+    git checkout sprint
     git submodule init
     git submodule update
 }
@@ -52,7 +54,7 @@ function upload_roles() {
 function install_chef_client() {
     local extra_packages
 
-    case platform in
+    case $PLATFORM in
         debian|ubuntu)
             extra_packages="wget curl build-essential automake cgroup-lite"
             ;;
@@ -63,7 +65,7 @@ function install_chef_client() {
 
     install_package ${extra_packages}
 
-    if [ platform == "debian" ] || [ platform == "ubuntu" ]; then
+    if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
         /usr/bin/cgroups-mount  # ?
     fi
 
@@ -71,13 +73,39 @@ function install_chef_client() {
     wait $!
 }
 
+function copy_file() {
+    # $1 - file name
+    # $2 - local path
+    local file=$1
+    local path=$2
 
+    mkdir -p $(dirname ${path})
+    cp /tmp/fakeconfig/${file} ${path}
+}
 
-function register_client() {
-    # $1 - Server IP
-    # $2 - Environment name
+# throw eth0 into br100 and swap ips.
+function bridge_whoop_de_do() {
+    if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
+        install_package "bridge-utils"
+    fi
 
-    mkdir -p /etc/chef
+    # get the eth0 addr
+    local addr=$(ip addr show eth0 | grep "inet " | awk '{ print $2 }')
 
+    ip addr del ${addr} dev eth0
+    ifconfig eth0 down
+    brctl addbr br100
+    brctl addif br100 eth0
+    ifconfig eth0 up
+    ifconfig br100 up ${addr}
 
+    ifconfig -a
+    ps auxw
+}
+
+function template_client() {
+    # $1 - IP
+    local ip=$1
+
+    sed /etc/chef/client-template.rb -s -e s/@IP@/${ip}/ > /etc/chef/client.rb
 }
