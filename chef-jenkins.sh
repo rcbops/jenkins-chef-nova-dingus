@@ -124,7 +124,10 @@ EOF
         count=$((count + 1))
     done
 
-    [ ${count} -lt ${SPINUP_TIMEOUT} ]
+    if [ ${count} -lt ${SPINUP_TIMEOUT} ]; then
+        return 0
+    fi
+    return 1
 }
 
 function boot_cluster() {
@@ -209,7 +212,7 @@ function collect_tasks() {
         fi
 
         if [ ${result} -ne 0 ] || [ ${DEBUG:-0} -ne 0 ]; then
-            if [ -z $1 ]; then  # don't show this if we passed an argument (final cleanup)
+            if [ -z $1 ] || [ $failcout -gt 1 ]; then  # only show first
                 echo "Output: "
                 cat ${PIDS[$pid]}
             fi
@@ -219,7 +222,7 @@ function collect_tasks() {
     done
 
     PIDS=()
-    [ $failcount -eq 0 ]
+    return ${failcount}
 }
 
 function prepare_chef() {
@@ -397,14 +400,12 @@ function fc_do() {
         echo $action >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
 
-    cat ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
+    # cat ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
 
     scp -i ${PRIVKEY} ${sshopts} ${TMPDIR}/scripts/${OPERANT_SERVER}.sh ${user}@${ip}:/tmp/fakeconfig.sh
 
     # copy over the template files.  Should be using rsync over ssh
     if [ -e "${TMPDIR}/dirtree/${OPERANT_SERVER}" ]; then
-        echo "Files in dirtree:"
-        ls ${TMPDIR}/dirtree/${OPERANT_SERVER}
         ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "mkdir /tmp/fakeconfig"
         scp -i ${PRIVKEY} ${sshopts} ${TMPDIR}/dirtree/${OPERANT_SERVER}/* ${user}@${ip}:/tmp/fakeconfig
     fi
