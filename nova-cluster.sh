@@ -42,6 +42,7 @@ echo "Cluster booted... configuring chef"
 create_chef_environment chef-server nova
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
+apt-get update
 install_chef_client
 copy_file validation.pem /etc/chef/validation.pem
 copy_file client-template.rb /etc/chef/client-template.rb
