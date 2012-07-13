@@ -36,6 +36,7 @@ echo "Cluster booted... configuring chef"
 create_chef_environment chef-server nova
 
 x_with_cluster "Installing/registering chef client" ${cluster[@]} <<EOF
+apt-get update
 install_chef_client
 copy_file validation.pem /etc/chef/validation.pem
 copy_file client-template.rb /etc/chef/client-template.rb
@@ -45,7 +46,8 @@ EOF
 
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
-role_add chef-server nova-aio "role[allinone]"
+role_add chef-server nova-aio "role[single-controller]"
+role_add chef-server nova-aio "role[single-compute]"
 role_add chef-server nova-aio  "recipe[kong]"
 role_add chef-server nova-aio "recipe[exerstack]"
 set_environment chef-server nova-aio nova

@@ -2,7 +2,7 @@
 
 INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
 
-source ./chef-jenkins.sh
+source $(dirname $0)/chef-jenkins.sh
 
 init
 
@@ -52,22 +52,32 @@ EOF
 
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
-role_add chef-server mysql "role[mysql-master]"
 set_environment chef-server mysql nova
+set_environment chef-server keystone nova
+set_environment chef-server glance nova
+set_environment chef-server api nova
+set_environment chef-server horizon nova
+set_environment chef-server compute1 nova
+set_environment chef-server compute2 nova
+
+x_with_cluster "Empty Run" ${cluster[@]} <<EOF
+chef-client
+EOF
+
+role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" ${cluster[@]} <<EOF
 chef-client
 EOF
 
 role_add chef-server keystone "role[keystone]"
 role_add chef-server keystone "role[rabbitmq-server]"
-set_environment chef-server keystone nova
 x_with_cluster "Installing keystone" ${cluster[@]} <<EOF
 chef-client
 EOF
 
-role_add chef-server glance "role[glance-api]"
 role_add chef-server glance "role[glance-registry]"
-set_environment chef-server glance nova
+role_add chef-server glance "role[glance-api]"
+
 x_with_cluster "Installing glance" ${cluster[@]} <<EOF
 chef-client
 EOF
@@ -78,27 +88,23 @@ role_add chef-server api "role[nova-api-ec2]"
 role_add chef-server api "role[nova-api-os-compute]"
 role_add chef-server api "role[nova-vncproxy]"
 role_add chef-server api "role[nova-volume]"
-role_add chef-server api "recipe[nova::nova-network]"
-role_add chef-server api "recipe[kong]"
-role_add chef-server api "recipe[exerstack]"
-set_environment chef-server api nova
-x_with_cluster "Installing API" ${cluster[@]} <<EOF
+role_add chef-server api "recipe[nova::network]"
+
+x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
 chef-client
 EOF
 
+role_add chef-server api "recipe[kong]"
+role_add chef-server api "recipe[exerstack]"
 role_add chef-server horizon "role[horizon-server]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
-set_environment chef-server horizon nova
-set_environment chef-server compute1 nova
-set_environment chef-server compute2 nova
+trap - ERR EXIT
 
 x_with_cluster "Installing the rest of the stack" ${cluster[@]} <<EOF
 chef-client
 EOF
-
-trap - ERR EXIT
 
 if ( ! run_tests api essex-final ); then
     echo "Tests failed."
