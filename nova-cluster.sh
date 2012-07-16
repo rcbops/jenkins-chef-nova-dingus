@@ -109,8 +109,6 @@ ip addr add 192.168.100.254/24 dev br99
 EOF
 fc_do
 
-trap - ERR EXIT
-
 if ( ! run_tests api essex-final ); then
     echo "Tests failed."
     exit 1
