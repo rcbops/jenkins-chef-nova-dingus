@@ -1,10 +1,10 @@
 #!/bin/bash
 # stupid cleanup script
 
-. nova-credentials
+# . nova-credentials
 
 if [ "$1" = "" ]; then
-    chef=$(nova list | grep chef-server | awk '{ print $4 }' | head -n1)
+    chef=$(nova list | grep ACTIVE | awk '{ print $4 }' | head -n1)
     job=${chef%%-*}
 else
     job=$1

@@ -6,6 +6,8 @@ set -x
 
 PLATFORM=debian
 COOKBOOK_PATH=/root
+GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks}
+COOKBOOK_OVERRIDE=""
 
 if [ -e /etc/redhat-release ]; then
     PLATFORM=redhat
@@ -31,12 +33,48 @@ function rabbitmq_fixup() {
 }
 
 function checkout_cookbooks() {
+    declare -a overrides
+    local override
+
+    mkdir -p ${COOKBOOK_PATH}
     cd ${COOKBOOK_PATH}
-    git clone https://github.com/rcbops/chef-cookbooks
+
+    local master_url=${GIT_MASTER_URL//,/ }
+    declare -a master_info=(${master_url})
+    local master_repo=${master_info[0]}
+    local master_branch=${master_info[1]:-sprint}
+
+    git clone ${master_repo}
+
+    mkdir -p chef-cookbooks
     cd chef-cookbooks
-    git checkout sprint
+    git checkout ${master_branch}
     git submodule init
     git submodule update
+
+    pushd cookbooks
+    # Okay, now start going through the overrides
+    overrides=(${COOKBOOK_OVERRIDE-})
+    if [ ! -z "${overrides:-}" ]; then
+        for override in ${overrides[@]}; do
+            echo "Doing override: ${override}"
+            declare -a repo_info
+            repo_info=(${override//,/ })
+            local repo=${repo_info[0]}
+            local branch=${repo_info[1]:-master}
+            local dirname=${repo##*/}
+
+            if [ -e ${dirname} ]; then
+                rm -rf ${dirname}
+            fi
+
+            git clone ${repo}
+            pushd ${dirname}
+            git checkout ${branch}
+            popd
+        done
+    fi
+    popd
 }
 
 function upload_cookbooks() {
@@ -82,6 +120,37 @@ function copy_file() {
     mkdir -p $(dirname ${path})
     cp /tmp/fakeconfig/${file} ${path}
 }
+
+function gretap_to_host() {
+    # $1 - bridge
+    # $2 - local device
+    # $3 - remote ip
+    # $4 - name
+
+    local bridge=$1
+    local device=$2
+    local remote=$3
+    local name=$4
+
+    modprobe ip_gre
+
+    local addr=$(ip addr show ${device} | grep "inet " | awk '{ print $2 }' | cut -d/ -f1)
+
+    if ( ! ip link show dev ${bridge} ); then
+        brctl addbr ${bridge}
+        ip link set ${bridge} up
+    fi
+
+    if [ "${addr}" = "${remote}" ]; then
+        # can't link to myself.  duh.
+        return 0
+    fi
+
+    ip link add gretap.${name} type gretap local ${addr} remote ${remote}
+    ip link set dev gretap.${name} up
+    brctl addif ${bridge} gretap.${name}
+}
+
 
 # throw eth0 into br100 and swap ips.
 function bridge_whoop_de_do() {

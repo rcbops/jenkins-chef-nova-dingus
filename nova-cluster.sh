@@ -21,6 +21,7 @@ boot_and_wait ${CHEF_IMAGE} chef-server ${CHEF_FLAVOR}
 wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
+COOKBOOK_OVERRIDE=${COOKBOOK_OVERRIDE:-}
 apt-get update
 install_package git-core
 rabbitmq_fixup oociahez
@@ -33,13 +34,13 @@ background_task "fc_do"
 boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
-echo "Cluster booted... configuring chef"
-
+echo "Cluster booted... setting up vpn thing"
+setup_private_network br100 br99 api ${cluster[@]}
 
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 
-create_chef_environment chef-server nova
+create_chef_environment chef-server nova-cluster
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
 apt-get update
@@ -47,39 +48,39 @@ install_chef_client
 copy_file validation.pem /etc/chef/validation.pem
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
-chef-client
+chef-client -ldebug
 EOF
 
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
-set_environment chef-server mysql nova
-set_environment chef-server keystone nova
-set_environment chef-server glance nova
-set_environment chef-server api nova
-set_environment chef-server horizon nova
-set_environment chef-server compute1 nova
-set_environment chef-server compute2 nova
+set_environment chef-server mysql nova-cluster
+set_environment chef-server keystone nova-cluster
+set_environment chef-server glance nova-cluster
+set_environment chef-server api nova-cluster
+set_environment chef-server horizon nova-cluster
+set_environment chef-server compute1 nova-cluster
+set_environment chef-server compute2 nova-cluster
 
 x_with_cluster "Empty Run" ${cluster[@]} <<EOF
-chef-client
+chef-client -ldebug
 EOF
 
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" ${cluster[@]} <<EOF
-chef-client
+chef-client -ldebug
 EOF
 
-role_add chef-server keystone "role[keystone]"
 role_add chef-server keystone "role[rabbitmq-server]"
+role_add chef-server keystone "role[keystone]"
 x_with_cluster "Installing keystone" ${cluster[@]} <<EOF
-chef-client
+chef-client -ldebug
 EOF
 
 role_add chef-server glance "role[glance-registry]"
 role_add chef-server glance "role[glance-api]"
 
 x_with_cluster "Installing glance" ${cluster[@]} <<EOF
-chef-client
+chef-client -ldebug
 EOF
 
 role_add chef-server api "role[nova-setup]"
@@ -88,10 +89,9 @@ role_add chef-server api "role[nova-api-ec2]"
 role_add chef-server api "role[nova-api-os-compute]"
 role_add chef-server api "role[nova-vncproxy]"
 role_add chef-server api "role[nova-volume]"
-role_add chef-server api "recipe[nova::network]"
 
 x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
-chef-client
+chef-client -ldebug
 EOF
 
 role_add chef-server api "recipe[kong]"
@@ -100,11 +100,16 @@ role_add chef-server horizon "role[horizon-server]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
-trap - ERR EXIT
-
 x_with_cluster "Installing the rest of the stack" ${cluster[@]} <<EOF
-chef-client
+chef-client -ldebug
 EOF
+
+x_with_server "Ip-ing API bridge" api <<EOF
+ip addr add 192.168.100.254/24 dev br99
+EOF
+fc_do
+
+trap - ERR EXIT
 
 if ( ! run_tests api essex-final ); then
     echo "Tests failed."

@@ -10,6 +10,12 @@ SOURCE_DIR=${SOURCE_DIR:-$(dirname $(readlink -f $0))}
 CREDENTIALS=${CREDENTIALS:-${SOURCE_DIR}/files/nova-credentials}
 PRIVKEY=${PRIVKEY:-${SOURCE_DIR}/files/id_jenkins}
 KEYNAME=${KEYNAME:-jenkins}
+USE_CS=${USE_CS:-0}
+if [ ${USE_CS} -eq 1 ]; then
+    LOGIN=${LOGIN:-root}
+else
+    LOGIN=${LOGIN:-ubuntu}
+fi
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
@@ -92,15 +98,25 @@ function boot_and_wait() {
     local name=${JOBID}-$2
     local flavor=$3
     local ip=""
+    local extra_flags=""
 
     echo "Booting ${name} with image ${image} using flavor ${flavor} on PID $$"
-    nova boot --flavor=${flavor} --image=${image} --key_name=${KEYNAME} ${name} > /dev/null 2>&1
+    if [ $USE_CS -eq 0 ]; then
+        extra_flags="--key_name=${KEYNAME}"
+    else
+        extra_flags="--file /root/.ssh/authorized_keys=${SOURCE_DIR}/files/authorized_keys"
+        LOGIN="root"
+    fi
+
+    nova boot --flavor=${flavor} --image=${image} ${extra_flags} ${name} > /dev/null 2>&1
 
     local count=0
 
     while [ "$ip" = "" ] && (( count < 30 )); do
         sleep 2
-        ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | awk '{ print $5 }')
+
+        ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | cut -d'|' -f3 | tr -d ' ' | tr , '\n' | egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+
         if [ "$ip" = "|" ]; then
             ip=""
         fi
@@ -192,6 +208,8 @@ function collect_tasks() {
     local failcount=0
     local result=0
     local oldtrap=""
+    local start_time=$(date +%s)
+    local stop_time=start_time
 
     echo "Collecting background tasks..."
     # allow a recently started task to schedule
@@ -205,7 +223,9 @@ function collect_tasks() {
         result=$?
 
         eval "${oldtrap}"
-        echo "Collected pid ${pid} with result code ${result}."
+        stop_time=$(date +%s)
+        local elapsed_time=$(( stop_time - start_time ))
+        echo "Collected pid ${pid} with result code ${result} in ${elapsed_time} seconds."
 
         if [ ${result} -ne 0 ]; then
             failcount=$(( failcount + 1 ))
@@ -220,6 +240,11 @@ function collect_tasks() {
 
         rm ${PIDS[$pid]}
     done
+
+    stop_time=$(date +%s)
+    local elapsed_time=$(( stop_time - start_time ))
+
+    echo "Collected all background tasks in ${elapsed_time} seconds with ${failcount} failures"
 
     PIDS=()
     return ${failcount}
@@ -391,7 +416,7 @@ function fc_describe_task() {
 function fc_do() {
     local ip=$(ip_for_host ${OPERANT_SERVER})
     local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-    local user="ubuntu"
+    local user=${LOGIN}
 
     echo "fc_do: executing task ${OPERANT_TASK} for server ${OPERANT_SERVER} as PID $$"
 
@@ -415,4 +440,41 @@ function fc_do() {
 
     fc_reset_tasks
     return ${retval}
+}
+
+function setup_private_network() {
+    # $1 - local network device
+    # $2 - new bridge
+    # $3 - hub device
+    # $4... - cluster
+
+    local localdev=$1
+    local newbridge=$2
+    local hubdev=$3
+
+    shift; shift; shift
+
+    hubdev_ip=$(ip_for_host ${hubdev})
+
+    # set up all of the things on the hub
+    fc_reset_tasks
+    OPERANT_SERVER=${hubdev}
+
+    echo "DOING HUB"
+    for host in $@; do
+        declare -a hostinfo
+        hostinfo=(${host//:/ })
+        host_name=${hostinfo[0]}
+        host_ip=$(ip_for_host ${host_name})
+
+        if [ "${host_name}" != ${hubdev} ]; then
+            echo "Adding hub to ${host_name}"
+            fc_add_task "gretap_to_host ${newbridge} ${localdev} ${host_ip} ${host_name}"
+        fi
+    done
+    fc_do
+
+    x_with_cluster "configuring private net ${localdev}" $@ <<EOF
+        gretap_to_host ${newbridge} ${localdev} ${hubdev_ip} ${hubdev}
+EOF
 }
