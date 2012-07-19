@@ -78,8 +78,10 @@ function checkout_cookbooks() {
     # If the overrides are specified as a git patch,
     # apply that patch, too
     if [ "${GIT_PATCH_URL:-}" != "" ]; then
-        cd ${GIT_REPO}
-        curl -s ${GIT_PATCH_URL} | git am
+        if [ "${GIT_REPO:-}" != "" ]; then
+            cd ${GIT_REPO}
+            curl -s ${GIT_PATCH_URL} | git am
+        fi
     fi
 
     popd

@@ -360,7 +360,7 @@ function set_node_attribute() {
 
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
     ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
-    ${SOURCE_DIR}/files/jsoncli.py -s "\"json_class\": \"Chef::Node\"" ${TMPDIR}/${chef_node_name}-new.json > ${TMPDIR}/${chef_node_name}-new2.json
+    ${SOURCE_DIR}/files/jsoncli.py -s 'json_class="Chef::Node"' ${TMPDIR}/${chef_node_name}-new.json > ${TMPDIR}/${chef_node_name}-new2.json
     knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new2.json
 }
 
@@ -455,10 +455,18 @@ function fc_do() {
     local ip=$(ip_for_host ${OPERANT_SERVER})
     local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     local user=${LOGIN}
+    local var
 
     echo "fc_do: executing task ${OPERANT_TASK} for server ${OPERANT_SERVER} as PID $$"
 
     cat ${SOURCE_DIR}/files/fakeconfig.sh > ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
+
+    # pass through important environment vars.  This should
+    # be configurable, but isn't.
+    for var in COOKBOOK_OVERRIDE GIT_PATCH_URL GIT_REPO; do
+        echo "${var}=${!var}" >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
+    done
+
     for action in "${FC_TASKS[@]}"; do
         echo $action >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
