@@ -60,4 +60,6 @@ if ( ! run_tests nova-aio essex-final ); then
     exit 1
 fi
 
+touch foo.log
+
 exit 0
