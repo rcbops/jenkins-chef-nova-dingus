@@ -22,6 +22,7 @@ wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 COOKBOOK_OVERRIDE=${COOKBOOK_OVERRIDE:-}
+GIT_PATCH_URL=${GIT_PATCH_URL:-}
 apt-get update
 install_package git-core
 rabbitmq_fixup oociahez

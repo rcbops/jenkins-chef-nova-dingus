@@ -1,0 +1,44 @@
+{
+    "default_attributes": {
+    },
+    "cookbook_versions": {
+    },
+    "json_class": "Chef::Environment",
+    "override_attributes": {
+        "nova": {
+            "libvirt": {
+                "virt_type": "qemu"
+            },
+            "networks": [
+                {
+                    "network_size": "255",
+                    "bridge_dev": "eth0",
+                    "ipv4_cidr": "192.168.100.0/24",
+                    "bridge": "br99",
+                    "dns1": "8.8.8.8",
+                    "dns2": "8.8.4.4",
+                    "num_networks": "1",
+                    "label": "public"
+                }
+            ]
+        },
+        "glance": {
+            "image_upload": true,
+            "images": [
+                "cirros"
+            ]
+        },
+        "mysql": {
+            "allow_remote_root": true,
+            "root_network_acl": "10.127.53.%"
+        },
+        "osops_networks": {
+            "management": "10.127.53.0/24",
+            "nova": "10.127.53.0/24",
+            "public": "10.127.53.0/24"
+        }
+    },
+    "name": "nova-cluster",
+    "chef_type": "environment",
+    "description": ""
+}

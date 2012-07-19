@@ -16,6 +16,7 @@ if [ ${USE_CS} -eq 1 ]; then
 else
     LOGIN=${LOGIN:-ubuntu}
 fi
+NOCLEAN=${NOCLEAN:-0}
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
@@ -34,6 +35,7 @@ SSH_TIMEOUT=${SSH_TIMEOUT:-240}
 declare -A PIDS=()
 OPERANT_SERVER=""
 OPERANT_TASK=""
+PARENT_PID=$$
 declare -a FC_TASKS
 
 function cleanup() {
@@ -50,15 +52,16 @@ function cleanup() {
 
     collect_tasks viciously
 
-
-    if [ -e ${TMPDIR}/nodes ]; then
-        for d in ${TMPDIR}/nodes/*; do
-            source ${d}
-            background_task "terminate_server ${NODE_FRIENDLY_NAME}"
-        done
+    # only leave this on error with noclean set
+    if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
+        if [ -e ${TMPDIR}/nodes ]; then
+            for d in ${TMPDIR}/nodes/*; do
+                source ${d}
+                background_task "terminate_server ${NODE_FRIENDLY_NAME}"
+            done
+        fi
+        collect_tasks
     fi
-
-    collect_tasks
 
     echo "Exiting with return value of ${retval}"
     exit ${retval}
@@ -66,12 +69,13 @@ function cleanup() {
 
 function init() {
     trap cleanup ERR EXIT
+    shopt -s nullglob
+    shopt -s extdebug # inherit trap handlers
 
     if [ ${DEBUG:-0} -eq 1 ]; then
         set -x
     fi
 
-    shopt -s nullglob
 
     export TMPDIR=$(mktemp -d)
     mkdir -p ${TMPDIR}/nodes
@@ -207,22 +211,25 @@ function background_task() {
 function collect_tasks() {
     local failcount=0
     local result=0
-    local oldtrap=""
     local start_time=$(date +%s)
     local stop_time=start_time
+    local oldtrap
 
     echo "Collecting background tasks..."
+
     # allow a recently started task to schedule
     sleep 1
 
     for pid in ${!PIDS[@]}; do
+        # turn off error traps while we wait for the pid
         oldtrap=$(trap -p ERR)
         trap - ERR
 
         wait $pid
         result=$?
 
-        eval "${oldtrap}"
+        eval ${oldtrap}
+
         stop_time=$(date +%s)
         local elapsed_time=$(( stop_time - start_time ))
         echo "Collected pid ${pid} with result code ${result} in ${elapsed_time} seconds."
@@ -324,6 +331,29 @@ function run_tests() {
 EOF
 
     fc_do
+}
+
+function set_node_attribute() {
+    # $1 chef server
+    # $2 node
+    # $3 key
+    # $4 value
+
+    local server=$1
+    local node=$2
+    local key=$3
+    local value=$4
+
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    local full_node_name=${JOBID}-${node}
+    local chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
+
+
+    knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
+    ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
+    ${SOURCE_DIR}/files/jsoncli.py -s "\"json_class\": \"Chef::Node\"" ${TMPDIR}/${chef_node_name}-new.json > ${TMPDIR}/${chef_node_name}-new2.json
+    knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new2.json
 }
 
 
@@ -477,4 +507,24 @@ function setup_private_network() {
     x_with_cluster "configuring private net ${localdev}" $@ <<EOF
         gretap_to_host ${newbridge} ${localdev} ${hubdev_ip} ${hubdev}
 EOF
+}
+
+function template_file() {
+    # $1 - template (assumed in SOURCE_DIR/templates)
+    # $2 - destination
+
+    local src=$1
+    local dest=$2
+
+    if [ ! -e ${SOURCE_DIR}/templates/${dest} ]; then
+        echo "Template file ${src} does not exist"
+        return 1
+    fi
+
+    eval "echo \"$(< ${SOURCE_DIR}/templates/${src})\"" > ${dest}
+}
+
+# This is an add_task item
+function template_to_remote() {
+    echo "woot"
 }

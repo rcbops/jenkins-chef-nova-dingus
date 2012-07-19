@@ -1,0 +1,40 @@
+{
+    "default_attributes": {
+    },
+    "json_class": "Chef::Environment",
+    "cookbook_versions": {
+    },
+    "override_attributes": {
+        "osops_networks": {
+            "swift": "10.127.53.0/24",
+            "swift-lb": "10.127.53.0/24",
+            "public": "10.127.53.0/24",
+            "nova": "10.127.53.0/24",
+            "management": "10.127.53.0/24"
+        },
+        "mysql": {
+            "allow_remote_root": true,
+            "root_network_acl": "10.127.53.%"
+        },
+        "swift": {
+            "use_informant": false,
+            "authkey": "3f281b71-ce89-4b27-a2ad-ad873d3f2760",
+            "swift_hash": "107c0568ea84",
+            "auto_rebuild_rings": true,
+            "authmode": "keystone",
+            "disk_test_filter": [
+                "candidate =~ /vd[^a]/",
+                "File.exist?('/dev/' + candidate)",
+                "info['removable'] = 0"
+            ]
+        },
+        "monitoring": {
+            "alarm_provider": "none",
+            "metric_provider": "none",
+            "procmon_provider": "monit"
+        }
+    },
+    "name": "swift-keystone",
+    "chef_type": "environment",
+    "description": ""
+}
