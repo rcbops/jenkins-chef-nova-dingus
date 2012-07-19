@@ -72,6 +72,14 @@ function init() {
     shopt -s nullglob
     shopt -s extdebug # inherit trap handlers
 
+    # convenient place to store credentials.  Assume it builds
+    # an array called MISC_CREDENTIALS, with keys being
+    # [service_user]=password
+    #
+    if [ -e ${SOUCE_DIR}/files/credentials ]; then
+        source ${SOURCE_DIR}/files/credentials
+    fi
+
     if [ ${DEBUG:-0} -eq 1 ]; then
         set -x
     fi
