@@ -6,8 +6,6 @@ source $(dirname $0)/chef-jenkins.sh
 
 init
 
-set -x
-
 declare -a cluster
 cluster=(nova-aio)
 
