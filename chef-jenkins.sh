@@ -407,7 +407,6 @@ function role_add() {
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
     full_node_name=${JOBID}-${node}
-    knife node list -c ${knife}
     chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
 
     echo "Adding role ${role} to ${chef_node_name}"
