@@ -7,22 +7,12 @@ source $(dirname $0)/chef-jenkins.sh
 init
 
 declare -a cluster
-cluster=(
-    "mysql:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "keystone:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "glance:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "api:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "horizon:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "compute1:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "compute2:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-)
+cluster=(mysql keystone glance api horizon compute1 compute2)
 
-boot_and_wait ${CHEF_IMAGE} chef-server ${CHEF_FLAVOR}
+boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
-x_with_server "Uploading cookbooks" "chef-server" <<EOF
-COOKBOOK_OVERRIDE=${COOKBOOK_OVERRIDE:-}
-GIT_PATCH_URL=${GIT_PATCH_URL:-}
+x_with_server "Uploading cookbooks" chef-server <<EOF
 apt-get update
 install_package git-core
 rabbitmq_fixup oociahez

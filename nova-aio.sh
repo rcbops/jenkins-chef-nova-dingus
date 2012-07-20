@@ -7,11 +7,9 @@ source $(dirname $0)/chef-jenkins.sh
 init
 
 declare -a cluster
-cluster=(
-    "nova-aio:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-)
+cluster=(nova-aio)
 
-boot_and_wait ${CHEF_IMAGE} chef-server ${CHEF_FLAVOR}
+boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading chef cookbooks" "chef-server" <<EOF
@@ -34,7 +32,7 @@ echo "Cluster booted... configuring chef"
 
 create_chef_environment chef-server nova
 
-x_with_cluster "Installing/registering chef client" ${cluster[@]} <<EOF
+x_with_cluster "Installing/registering chef client" nova-aio <<EOF
 apt-get update
 install_chef_client
 copy_file validation.pem /etc/chef/validation.pem
@@ -51,7 +49,7 @@ role_add chef-server nova-aio  "recipe[kong]"
 role_add chef-server nova-aio "recipe[exerstack]"
 set_environment chef-server nova-aio nova
 
-x_with_cluster "Running first chef pass" ${cluster[@]} <<EOF
+x_with_cluster "Running first chef pass" nova-aio <<EOF
 chef-client
 EOF
 
