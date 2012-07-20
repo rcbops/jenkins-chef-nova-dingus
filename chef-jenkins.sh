@@ -20,10 +20,6 @@ NOCLEAN=${NOCLEAN:-0}
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
-TYPEMAP[infra]=${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}
-TYPEMAP[kong]=${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}
-TYPEMAP[swiftstorage]=${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}  # could be instance with large ephemeral
-TYPEMAP[swiftproxy]=${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}
 
 # sensible defaults
 SPINDOWN_TIMEOUT=${SPINDOWN_TIMEOUT:-60}
@@ -103,14 +99,17 @@ function terminate_server() {
 }
 
 function boot_and_wait() {
-    # $1 - image
-    # $2 - name
+    # $1 - name
+    # $2 - image
     # $3 - flavor
-    local image=$1
-    local name=${JOBID}-$2
-    local flavor=$3
+    local name=${JOBID}-$1
     local ip=""
     local extra_flags=""
+
+    get_likely_flavors ${name}
+
+    local image=${2:-${LIKELY_IMAGE}}
+    local flavor=${3:-${LIKELY_FLAVOR}}
 
     echo "Booting ${name} with image ${image} using flavor ${flavor} on PID $$"
     if [ $USE_CS -eq 0 ]; then
@@ -158,6 +157,31 @@ EOF
     return 1
 }
 
+function get_likely_flavors() {
+    # $1 - hostname
+
+    # look up in a typemap first.  If there is
+    # no typemap, and it looks chefish, use the chef
+    # instance and flavor, otherwise use the instance
+
+    LIKELY_FLAVOR=${INSTANCE_FLAVOR}
+    LIKELY_IMAGE=${INSTANCE_IMAGE}
+
+    local hostname=$1
+
+    if [ "${TYPEMAP[${hostname}]:-}" == "" ]; then
+        if [[ ${hostname} =~ "chef" ]]; then
+            LIKELY_FLAVOR=${CHEF_FLAVOR}
+            LIKELY_IMAGE=${CHEF_IMAGE}
+        fi
+    else
+        local flavor_info=(${TYPEMAP[${hostname}]//:/ })
+        LIKELY_IMAGE=${flavor_info[0]}
+        LIKELY_FLAVOR=${flavor_info[1]}
+    fi
+}
+
+
 function boot_cluster() {
     # $1... - cluster members in name:image:flavor format
 
@@ -169,7 +193,7 @@ function boot_cluster() {
         local image=${hostinfo[1]}
         local flavor=${hostinfo[2]}
 
-        background_task "boot_and_wait ${image} ${name} ${flavor}"
+        background_task "boot_and_wait ${name} ${image} ${flavor}"
     done
 
     collect_tasks
