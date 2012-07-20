@@ -39,7 +39,7 @@
             "public": "10.127.53.0/24"
         }
     },
-    "name": "nova",
+    "name": "nova-aio",
     "chef_type": "environment",
     "description": ""
 }
