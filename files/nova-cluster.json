@@ -6,6 +6,7 @@
     "json_class": "Chef::Environment",
     "override_attributes": {
         "nova": {
+            "apply_patches": true,
             "libvirt": {
                 "virt_type": "qemu"
             },
