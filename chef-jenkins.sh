@@ -331,11 +331,11 @@ function run_tests() {
     local version=$2
 
     x_with_server "running tests" $1 <<-EOF
+        cd /opt/exerstack
+        ONESHOT=1 ./exercise.sh ${version} euca.sh glance.sh keystone.sh nova-cli.sh
+
         cd /opt/kong
         ./run_tests.sh --version ${version} --nova
-
-        cd /opt/exerstack
-        ./exercise.sh ${version} euca.sh glance.sh keystone.sh nova-cli.sh
 EOF
 
     fc_do
