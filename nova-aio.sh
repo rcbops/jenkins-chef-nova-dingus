@@ -6,6 +6,8 @@ source $(dirname $0)/chef-jenkins.sh
 
 init
 
+set -x
+
 declare -a cluster
 cluster=(nova-aio)
 
@@ -45,7 +47,7 @@ EOF
 # set up the proper roles for the nodes and go.
 role_add chef-server nova-aio "role[single-controller]"
 role_add chef-server nova-aio "role[single-compute]"
-role_add chef-server nova-aio  "recipe[kong]"
+role_add chef-server nova-aio "recipe[kong]"
 role_add chef-server nova-aio "recipe[exerstack]"
 set_environment chef-server nova-aio nova-aio
 

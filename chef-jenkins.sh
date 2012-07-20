@@ -2,8 +2,8 @@
 
 # set up a job-id to be something other than random
 # particularly if we're running under jenkins
-JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_ID:-${USER}_${RANDOM}}
-JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "_")
+JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_NUMBER:-${USER}-${RANDOM}}
+JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 
 # likely need overrides
 CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
@@ -57,7 +57,7 @@ function cleanup() {
         if [ -e ${TMPDIR}/nodes ]; then
             for d in ${TMPDIR}/nodes/*; do
                 source ${d}
-                background_task "terminate_server ${NODE_NAME}"
+                background_task "terminate_server ${NODE_FRIENDLY_NAME}"
             done
         fi
         collect_tasks
@@ -407,6 +407,7 @@ function role_add() {
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
     full_node_name=${JOBID}-${node}
+    knife node list -c ${knife}
     chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
 
     echo "Adding role ${role} to ${chef_node_name}"
