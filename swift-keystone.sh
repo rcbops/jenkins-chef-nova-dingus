@@ -7,13 +7,7 @@ source $(dirname $0)/chef-jenkins.sh
 init
 
 declare -a cluster
-cluster=(
-    "keystone:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "proxy:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "storage1:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "storage2:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-    "storage3:${INSTANCE_IMAGE}:${INSTANCE_FLAVOR}"
-)
+cluster=(keystone proxy storage1 storage2 storage3)
 
 boot_and_wait ${CHEF_IMAGE} chef-server ${CHEF_FLAVOR}
 wait_for_ssh $(ip_for_host chef-server)
@@ -65,7 +59,7 @@ set_environment chef-server storage3 swift-keystone
 role_add chef-server keystone "role[mysql-master]"
 role_add chef-server keystone "role[rabbitmq-server]"
 role_add chef-server keystone "role[keystone]"
-x_with_cluster "Installing keystone" ${cluster[@]} <<EOF
+x_with_cluster "Installing keystone" keystone <<EOF
 chef-client -ldebug
 EOF
 
@@ -87,22 +81,15 @@ background_task "fc_do"
 collect_tasks
 
 # Now run all the storage servers
-for d in storage{1..3}; do
-    x_with_server "Storage - Pass 1" ${d} <<-EOF
-        chef-client -ldebug
+x_with_cluster "Storage - Pass 1" storage1 storage2 storage3 <<EOF
+chef-client -ldebug
 EOF
-    background_task "fc_do"
-done
-collect_tasks
-
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
-x_with_server "Proxy - Pass 1" proxy <<EOF
+x_with_cluster "Proxy - Pass 1" proxy <<EOF
 chef-client -ldebug
 EOF
-background_task "fc_do"
-collect_tasks
 
 role_add chef-server proxy "recipe[kong]"
 role_add chef-server proxy "recipe[exerstack]"
@@ -116,5 +103,3 @@ EOF
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client -ldebug
 EOF
-
-trap - ERR EXIT

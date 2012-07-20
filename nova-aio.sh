@@ -12,7 +12,7 @@ cluster=(nova-aio)
 boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
-x_with_server "Uploading chef cookbooks" "chef-server" <<EOF
+x_with_server "Uploading chef cookbooks" chef-server <<EOF
 apt-get update
 install_package git-core
 rabbitmq_fixup oociahez
@@ -30,7 +30,7 @@ echo "Cluster booted... configuring chef"
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 
-create_chef_environment chef-server nova
+create_chef_environment chef-server nova-aio
 
 x_with_cluster "Installing/registering chef client" nova-aio <<EOF
 apt-get update
@@ -47,7 +47,7 @@ role_add chef-server nova-aio "role[single-controller]"
 role_add chef-server nova-aio "role[single-compute]"
 role_add chef-server nova-aio  "recipe[kong]"
 role_add chef-server nova-aio "recipe[exerstack]"
-set_environment chef-server nova-aio nova
+set_environment chef-server nova-aio nova-aio
 
 x_with_cluster "Running first chef pass" nova-aio <<EOF
 chef-client
@@ -59,5 +59,3 @@ if ( ! run_tests nova-aio essex-final ); then
 fi
 
 touch foo.log
-
-exit 0

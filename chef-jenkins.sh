@@ -1,9 +1,13 @@
 #!/bin/bash -x
 
+# set up a job-id to be something other than random
+# particularly if we're running under jenkins
+JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_ID:-${USER}_${RANDOM}}
+JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "_")
+
 # likely need overrides
 CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-fe9bbecf-60ee-4c92-a229-15a119570a87}
-JOBID=${JOBID:-${RANDOM}}
 CHEF_FLAVOR=${CHEF_FLAVOR:-2}
 INSTANCE_FLAVOR=${INSTANCE_FLAVOR:-2}
 SOURCE_DIR=${SOURCE_DIR:-$(dirname $(readlink -f $0))}
@@ -53,7 +57,7 @@ function cleanup() {
         if [ -e ${TMPDIR}/nodes ]; then
             for d in ${TMPDIR}/nodes/*; do
                 source ${d}
-                background_task "terminate_server ${NODE_FRIENDLY_NAME}"
+                background_task "terminate_server ${NODE_NAME}"
             done
         fi
         collect_tasks
@@ -67,6 +71,8 @@ function init() {
     trap cleanup ERR EXIT
     shopt -s nullglob
     shopt -s extdebug # inherit trap handlers
+
+    echo "Intializing job ${JOBID}"
 
     # convenient place to store credentials.  Assume it builds
     # an array called MISC_CREDENTIALS, with keys being
@@ -105,8 +111,9 @@ function boot_and_wait() {
     local name=${JOBID}-$1
     local ip=""
     local extra_flags=""
+    local friendly_name=$1
 
-    get_likely_flavors ${name}
+    get_likely_flavors ${friendly_name}
 
     local image=${2:-${LIKELY_IMAGE}}
     local flavor=${3:-${LIKELY_FLAVOR}}
@@ -138,7 +145,7 @@ function boot_and_wait() {
 
     cat > ${TMPDIR}/nodes/${name} <<-EOF
     export NODE_NAME=${name}
-    export NODE_FRIENDLY_NAME=${2}
+    export NODE_FRIENDLY_NAME=${friendly_name}
     export NODE_IMAGE=${image}
     export NODE_KEY=${KEYNAME}
     export NODE_FLAVOR=${flavor}
@@ -381,7 +388,6 @@ function set_node_attribute() {
     local full_node_name=${JOBID}-${node}
     local chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
 
-
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
     ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
     ${SOURCE_DIR}/files/jsoncli.py -s 'json_class="Chef::Node"' ${TMPDIR}/${chef_node_name}-new.json > ${TMPDIR}/${chef_node_name}-new2.json
@@ -564,7 +570,7 @@ function template_file() {
     eval "echo \"$(< ${SOURCE_DIR}/templates/${src})\"" > ${dest}
 }
 
-# This is an add_task item
+# This will be a add_task item for copying to remote
 function template_to_remote() {
-    echo "woot"
+    echo "pass"
 }
