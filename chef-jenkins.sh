@@ -21,6 +21,7 @@ else
     LOGIN=${LOGIN:-ubuntu}
 fi
 NOCLEAN=${NOCLEAN:-0}
+GITHUB_CREDENTIALS="${GITHUB_CREDENTIALS}:-${SOURCE_DIR}/files/github-credentials"
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
@@ -164,6 +165,26 @@ EOF
     return 1
 }
 
+
+function github_post_comment() {
+    # $1 - git comment url
+    # $2... - body
+
+    local comment_url=${1:-}
+    shift
+    local body="$@"
+
+    if [ ! -e ${GITHUB_CREDENTIALS} ]; then
+        echo "No github credentails -- not posting comment"
+        return 0
+    fi
+
+#curl -s -K ~/.rcbjenkins-git-creds ${GIT_COMMENT_URL} -X 'POST' -d '{"body": "Gate: Nova All-In-One\n * '${BUILD_URL}'consoleFull : SUCCESS"}'
+
+    curl -s -K ${GITHUB_CREDENTIALS} ${comment_url} -X 'POST' -d '{"body": ${body} }'
+
+}
+
 function get_likely_flavors() {
     # $1 - hostname
 
@@ -239,7 +260,8 @@ function wait_for_cluster_ssh() {
 function background_task() {
     outfile=$(mktemp)
     exec 99>&1
-    eval "$@ > ${outfile} 2>&1 &"
+
+    eval "$* > ${outfile} 2>&1 &"
     local pid=$!
     echo "Backgrounded $@ as PID ${pid}" >&99
     exec 99>&-
@@ -368,7 +390,6 @@ function run_tests() {
         cd /opt/kong
         ./run_tests.sh --version ${version} --nova
 EOF
-
     fc_do
 }
 
@@ -568,6 +589,61 @@ function template_file() {
     fi
 
     eval "echo \"$(< ${SOURCE_DIR}/templates/${src})\"" > ${dest}
+}
+
+# grab log files from all the nodes in a cluster
+# and drop them in subdirs under the node name
+function cluster_fetch_file() {
+    # $1 - remote path
+    # $2 - local path (root of dir)
+    # $3... - cluster nodes
+
+    local remote_path="$1"
+    local local_path="$2"
+    shift; shift
+
+    for host in $@; do
+        mkdir -p ${local_path}/${host}
+        background_task fetch_file ${host} "\"${remote_path}\"" ${local_path}/${host}
+    done
+
+    collect_tasks
+}
+
+# fetch a file from a node
+function fetch_file() {
+    # $1 - node (friendly name)
+    # $2 - remote path (or remoted glob)
+    # $3 - local path
+    local friendly_name=$1
+    local remote_path=$2
+    local local_path=$3
+
+    local ip=$(ip_for_host ${friendly_name})
+    local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+    local user=${LOGIN}
+
+    scp -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}"
+}
+
+# we'll just lisp this up a bit - a cluster partial for you, wilk
+function cluster_do {
+    # $1 - cluster expressed as space separated string
+    # $2 - thing to do that takes a server as first arg
+
+    declare -a cluster=("${!1}")
+    local thing=$2
+
+    shift
+    shift
+
+    fc_reset_tasks
+
+    for host in ${cluster[@]}; do
+        background_task "${thing} ${host} $@"
+    done
+
+    collect_tasks
 }
 
 # This will be a add_task item for copying to remote

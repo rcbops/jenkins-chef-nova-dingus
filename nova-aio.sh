@@ -58,4 +58,10 @@ if ( ! run_tests nova-aio essex-final ); then
     exit 1
 fi
 
-touch foo.log
+# let's grab the logs
+cluster_fetch_file "/etc/{nova,glance,keystone}/*log" ./logs
+
+if [ ! -z "${BUILD_URL}" ] && [ ! -z "${GIT_COMMENT_URL:-}" ]; then
+    msg="Gate: Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
+    github_post_comment ${GIT_COMMENT_URL} ${msg}
+fi
