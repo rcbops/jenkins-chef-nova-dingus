@@ -17,6 +17,7 @@ KEYNAME=${KEYNAME:-jenkins}
 USE_CS=${USE_CS:-0}
 if [ ${USE_CS} -eq 1 ]; then
     LOGIN=${LOGIN:-root}
+    SPINUP_TIMEOUT=300
 else
     LOGIN=${LOGIN:-ubuntu}
 fi
@@ -69,9 +70,10 @@ function cleanup() {
 }
 
 function init() {
-    trap cleanup ERR EXIT
+    trap cleanup ERR EXIT TERM INT
     shopt -s nullglob
-    shopt -s extdebug # inherit trap handlers
+#    shopt -s extdebug # inherit trap handlers
+    set -o errtrace
 
     echo "Intializing job ${JOBID}"
 
@@ -81,6 +83,13 @@ function init() {
     #
     if [ -e ${SOUCE_DIR}/files/credentials ]; then
         source ${SOURCE_DIR}/files/credentials
+    fi
+
+    # fix up for cloud servers-ng
+    if ( grep -q "identity.api.rackspacecloud" ${CREDENTIALS} ); then
+        USE_CS=1
+        LOGIN=root
+        SPINUP_TIMEOUT=300
     fi
 
     if [ ${DEBUG:-0} -eq 1 ]; then
@@ -105,6 +114,27 @@ function terminate_server() {
     timeout ${SPINDOWN_TIMEOUT} sh -c "while nova show ${name} > /dev/null; do sleep 2; done"
 }
 
+# given an image that's either a UUID or a name, find the
+# UUID for it
+function translate_image() {
+    # $1 - image or uuid
+    #
+    # returns _RET set with the UUID
+
+    local image=$1
+
+    local candidates=$(nova image-list | grep "${image}" | awk '{ print $2 }')
+
+    trap -p
+
+    if [ $(echo "${candidates}" | wc -l) -ne 1 ] || [ -z "${candidates}" ]; then
+        echo "Can't locate image ${image} -- image does not exist or too many candidates"
+        return 1
+    fi
+
+    _RET=${candidates}
+}
+
 function boot_and_wait() {
     # $1 - name
     # $2 - image
@@ -118,6 +148,11 @@ function boot_and_wait() {
 
     local image=${2:-${LIKELY_IMAGE}}
     local flavor=${3:-${LIKELY_FLAVOR}}
+
+    # if the image isn't uuid-ey, then we'll grep around for the
+    # image id.
+    translate_image "${image}"
+    image=$_RET
 
     echo "Booting ${name} with image ${image} using flavor ${flavor} on PID $$"
     if [ $USE_CS -eq 0 ]; then
@@ -221,7 +256,7 @@ function boot_cluster() {
         local image=${hostinfo[1]}
         local flavor=${hostinfo[2]}
 
-        background_task "boot_and_wait ${name} ${image} ${flavor}"
+        background_task "boot_and_wait \"${name}\" \"${image}\" \"${flavor}\""
     done
 
     collect_tasks
@@ -300,7 +335,7 @@ function collect_tasks() {
         fi
 
         if [ ${result} -ne 0 ] || [ ${DEBUG:-0} -ne 0 ]; then
-            if [ -z $1 ] || [ $failcout -gt 1 ]; then  # only show first
+            if [ -z ${1:-} ] || [ $failcout -gt 1 ]; then  # only show first
                 echo "Output: "
                 cat ${PIDS[$pid]}
             fi
