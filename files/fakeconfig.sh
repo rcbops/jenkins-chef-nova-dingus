@@ -24,10 +24,11 @@ function install_package() {
 }
 
 function rabbitmq_fixup() {
-    # $1 password
+    local amqp_password=$(egrep "^amqp_pass" server.rb | awk '{ print $2 }' | tr -d '"')
+
     if (! rabbitmqctl list_vhosts | grep -q chef ); then
         rabbitmqctl add_vhost /chef
-        rabbitmqctl add_user chef ${1}
+        rabbitmqctl add_user chef ${amqp_password}
         rabbitmqctl set_permissions -p /chef chef ".*" ".*" ".*"
     fi
 }
