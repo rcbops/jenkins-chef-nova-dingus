@@ -209,7 +209,7 @@ function github_post_comment() {
     local body="$@"
 
     if [ ! -e ${GITHUB_CREDENTIALS} ]; then
-        echo "No github credentails -- not posting comment"
+        echo "No github credentials -- not posting comment"
         return 0
     fi
 
