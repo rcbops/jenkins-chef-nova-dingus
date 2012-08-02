@@ -9,14 +9,15 @@ init
 declare -a cluster
 cluster=(keystone proxy storage1 storage2 storage3)
 
-boot_and_wait ${CHEF_IMAGE} chef-server ${CHEF_FLAVOR}
+boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
-COOKBOOK_OVERRIDE=${COOKBOOK_OVERRIDE:-}
 apt-get update
+flush_iptables
 install_package git-core
-rabbitmq_fixup oociahez
+rabbitmq_fixup
+chef_fixup
 checkout_cookbooks
 upload_cookbooks
 upload_roles
@@ -41,8 +42,9 @@ EOF
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
 apt-get update
+flush_iptables
 install_chef_client
-copy_file validation.pem /etc/chef/validation.pem
+fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
 chef-client -ldebug
