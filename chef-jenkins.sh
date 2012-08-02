@@ -23,7 +23,7 @@ else
     LOGIN=${LOGIN:-ubuntu}
 fi
 NOCLEAN=${NOCLEAN:-0}
-GITHUB_CREDENTIALS="${GITHUB_CREDENTIALS}:-${SOURCE_DIR}/files/github-credentials"
+GITHUB_CREDENTIALS="${GITHUB_CREDENTIALS:-${SOURCE_DIR}/files/github-credentials}"
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
