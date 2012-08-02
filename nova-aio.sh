@@ -14,8 +14,10 @@ wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading chef cookbooks" chef-server <<EOF
 apt-get update
+flush_iptables
 install_package git-core
-rabbitmq_fixup oociahez
+rabbitmq_fixup
+chef_fixup
 checkout_cookbooks
 upload_cookbooks
 upload_roles
@@ -34,11 +36,12 @@ create_chef_environment chef-server nova-aio
 
 x_with_cluster "Installing/registering chef client" nova-aio <<EOF
 apt-get update
+flush_iptables
 install_chef_client
-copy_file validation.pem /etc/chef/validation.pem
+fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
-chef-client
+chef-client -ldebug
 EOF
 
 # clients are all kicked and inserted into chef server.  Need to
@@ -50,7 +53,7 @@ role_add chef-server nova-aio "recipe[exerstack]"
 set_environment chef-server nova-aio nova-aio
 
 x_with_cluster "Running first chef pass" nova-aio <<EOF
-chef-client
+chef-client -ldebug
 EOF
 
 if ( ! run_tests nova-aio essex-final ); then

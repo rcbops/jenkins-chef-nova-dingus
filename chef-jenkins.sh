@@ -15,9 +15,10 @@ CREDENTIALS=${CREDENTIALS:-${SOURCE_DIR}/files/nova-credentials}
 PRIVKEY=${PRIVKEY:-${SOURCE_DIR}/files/id_jenkins}
 KEYNAME=${KEYNAME:-jenkins}
 USE_CS=${USE_CS:-0}
+BEST_MIRROR=""
 if [ ${USE_CS} -eq 1 ]; then
     LOGIN=${LOGIN:-root}
-    SPINUP_TIMEOUT=300
+    SPINUP_TIMEOUT=600
 else
     LOGIN=${LOGIN:-ubuntu}
 fi
@@ -89,7 +90,7 @@ function init() {
     if ( grep -q "identity.api.rackspacecloud" ${CREDENTIALS} ); then
         USE_CS=1
         LOGIN=root
-        SPINUP_TIMEOUT=300
+        SPINUP_TIMEOUT=600
     fi
 
     if [ ${DEBUG:-0} -eq 1 ]; then
@@ -124,8 +125,6 @@ function translate_image() {
     local image=$1
 
     local candidates=$(nova image-list | grep "${image}" | awk '{ print $2 }')
-
-    trap -p
 
     if [ $(echo "${candidates}" | wc -l) -ne 1 ] || [ -z "${candidates}" ]; then
         echo "Can't locate image ${image} -- image does not exist or too many candidates"
@@ -359,7 +358,10 @@ function prepare_chef() {
 
     if [ ! -e ${TMPDIR}/chef/${server} ]; then
         mkdir -p ${TMPDIR}/chef/${server}/checksums
-        cp ${SOURCE_DIR}/files/{chefadmin,validation}.pem ${TMPDIR}/chef/${server}
+        wget -nv http://$(ip_for_host ${server}):4000/validation.pem -O ${TMPDIR}/chef/${server}/validation.pem
+        wget -nv http://$(ip_for_host ${server}):4000/chefadmin.pem -O ${TMPDIR}/chef/${server}/chefadmin.pem
+
+        # cp ${SOURCE_DIR}/files/{chefadmin,validation}.pem ${TMPDIR}/chef/${server}
         cat > ${TMPDIR}/chef/${server}/knife.rb <<-EOF
             log_level                :info
             log_location             STDOUT

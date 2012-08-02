@@ -24,13 +24,46 @@ function install_package() {
 }
 
 function rabbitmq_fixup() {
-    local amqp_password=$(egrep "^amqp_pass" server.rb | awk '{ print $2 }' | tr -d '"')
+    local amqp_password=$(egrep "^amqp_pass" /etc/chef/server.rb | awk '{ print $2 }' | tr -d '"')
+
+    # sometimes rabbit gets mad about hostnames changing
+    # when booting from a snapshotted instance...
+    if ! /etc/init.d/rabbitmq-server restart; then
+        local pid=$(ps auxw | grep "/var/lib/rabbi[t]" | awk '{ print $2 }')
+        if [ "${pid:-}" != "" ]; then
+            kill $pid
+            /etc/init.d/rabbitmq-server start
+            sleep 5
+        fi
+    fi
 
     if (! rabbitmqctl list_vhosts | grep -q chef ); then
         rabbitmqctl add_vhost /chef
         rabbitmqctl add_user chef ${amqp_password}
         rabbitmqctl set_permissions -p /chef chef ".*" ".*" ".*"
     fi
+}
+
+
+function chef_fixup() {
+    cat > ${HOME}/.chef/knife.rb <<EOF
+log_level                :info
+log_location             STDOUT
+node_name                'chefadmin'
+client_key               '${HOME}/.chef/chefadmin.pem'
+validation_client_name   'chef-validator'
+validation_key           '${HOME}/.chef/validation.pem'
+chef_server_url          'http://localhost:4000'
+cache_type               'BasicFile'
+cache_options( :path => '${HOME}/.chef/checksums' )
+EOF
+
+    # This is totally dangerously stupid
+    mkdir -p /etc/chef
+    cp /etc/chef/validation.pem /usr/share/chef-server-api/public
+    cp ${HOME}/.chef/chefadmin.pem /usr/share/chef-server-api/public
+    chmod 644 /usr/share/chef-server-api/public/chefadmin.pem
+    chmod 644 /usr/share/chef-server-api/public/validation.pem
 }
 
 function checkout_cookbooks() {
@@ -123,6 +156,20 @@ function install_chef_client() {
     wait $!
 }
 
+function swap_apt_source() {
+    # $1 - new mirror (not mirror.rackspace.com)
+    #
+    sed -i /etc/apt/sources.list -e "s/mirror.rackspace.com/${1}/g"
+}
+
+function fetch_validation_pem() {
+    # $1 - IP of chef server
+    local ip=$1
+    mkdir -p /etc/chef
+    rm -f /etc/chef/validation.pem
+    wget -nv http://${ip}:4000/validation.pem -O /etc/chef/validation.pem
+}
+
 function copy_file() {
     # $1 - file name
     # $2 - local path
@@ -189,4 +236,16 @@ function template_client() {
     local ip=$1
 
     sed /etc/chef/client-template.rb -s -e s/@IP@/${ip}/ > /etc/chef/client.rb
+}
+
+function flush_iptables() {
+    iptables -F
+    iptables -X
+    iptables -t nat -F
+    iptables -t nat -X
+    iptables -t mangle -F
+    iptables -t mangle -X
+    iptables -P INPUT ACCEPT
+    iptables -P FORWARD ACCEPT
+    iptables -P OUTPUT ACCEPT
 }
