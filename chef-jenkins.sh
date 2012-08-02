@@ -551,7 +551,7 @@ function fc_do() {
 
     # pass through important environment vars.  This should
     # be configurable, but isn't.
-    for var in COOKBOOK_OVERRIDE GIT_PATCH_URL GIT_REPO; do
+    for var in COOKBOOK_OVERRIDE GIT_PATCH_URL GIT_REPO GIT_DIFF_URL; do
         echo "${var}=${!var}" >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
 
