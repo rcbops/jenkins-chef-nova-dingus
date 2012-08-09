@@ -7,7 +7,7 @@ source $(dirname $0)/chef-jenkins.sh
 init
 
 declare -a cluster
-cluster=(keystone proxy storage1 storage2 storage3)
+cluster=(mysql keystone glance api horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
 boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
@@ -27,10 +27,13 @@ background_task "fc_do"
 boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
+echo "Cluster booted... setting up vpn thing"
+setup_private_network br100 br99 api ${cluster[@]}
+
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 
-create_chef_environment chef-server swift-keystone
+create_chef_environment chef-server bigcluster
 
 # fix up the storage nodes
 x_with_cluster "un-fscking ephemerals" storage1 storage2 storage3 <<EOF
@@ -52,13 +55,15 @@ EOF
 
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
-set_environment chef-server keystone swift-keystone
-set_environment chef-server proxy swift-keystone
-set_environment chef-server storage1 swift-keystone
-set_environment chef-server storage2 swift-keystone
-set_environment chef-server storage3 swift-keystone
+for d in "${cluster[@]}"; do
+    set_environment chef-server ${d} bigcluster
+done
 
-role_add chef-server keystone "role[mysql-master]"
+role_add chef-server mysql "role[mysql-master]"
+x_with_cluster "Installing mysql" mysql <<EOF
+chef-client -ldebug
+EOF
+
 role_add chef-server keystone "role[rabbitmq-server]"
 role_add chef-server keystone "role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
@@ -75,29 +80,38 @@ for node_no in {1..3}; do
     set_node_attribute chef-server storage${node_no} "normal/swift" "{\"zone\": ${node_no} }"
 done
 
-# run the proxy only first, to set up gits and whatnot
-x_with_server "Proxy - Pass 1" proxy <<EOF
-chef-client -ldebug
-EOF
-background_task "fc_do"
-collect_tasks
+role_add chef-server glance "role[glance-registry]"
+role_add chef-server glance "role[glance-api]"
 
-# Now run all the storage servers
-x_with_cluster "Storage - Pass 1" storage1 storage2 storage3 <<EOF
+x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
 chef-client -ldebug
 EOF
+
+role_add chef-server api "role[nova-setup]"
+role_add chef-server api "role[nova-scheduler]"
+role_add chef-server api "role[nova-api-ec2]"
+role_add chef-server api "role[nova-api-os-compute]"
+role_add chef-server api "role[nova-vncproxy]"
+role_add chef-server api "role[nova-volume]"
+
+x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
+chef-client -ldebug
+EOF
+
+role_add chef-server api "recipe[kong]"
+role_add chef-server api "recipe[exerstack]"
+role_add chef-server horizon "role[horizon-server]"
+role_add chef-server compute1 "role[single-compute]"
+role_add chef-server compute2 "role[single-compute]"
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
-x_with_cluster "Proxy - Pass 1" proxy <<EOF
+x_with_cluster "proxy/api/horizon/computes" proxy api horizon compute{1..2} <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server proxy "recipe[kong]"
-role_add chef-server proxy "recipe[exerstack]"
-
 # Now run all the storage servers
-x_with_cluster "Storage - Pass 2" storage1 storage2 storage3 <<EOF
+x_with_cluster "Storage - Pass 2" storage{1..3} <<EOF
 chef-client -ldebug
 EOF
 
@@ -111,7 +125,14 @@ x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client -ldebug
 EOF
 
-if ( ! run_tests proxy essex-final swift keystone); then
+x_with_server "fixerating" api <<EOF
+install_package swift
+ip addr add 192.168.100.254/24 dev br99
+EOF
+background_task "fc_do"
+collect_tasks
+
+if ( ! run_tests api essex-final nova glance swift keystone); then
     echo "Tests failed."
     exit 1
 fi

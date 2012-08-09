@@ -1,10 +1,18 @@
 #!/bin/bash
 
-INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
+#INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
+CHEF_IMAGE=chef
+INSTANCE_IMAGE=bridge-precise
+CHEF_FLAVOR=3
+IMAGE_FLAVOR=3
 
 source $(dirname $0)/chef-jenkins.sh
 
 init
+
+if [ ${USE_CS} -eq 1 ]; then
+    INSTANCE_IMAGE=ubuntu-precise
+fi
 
 declare -a cluster
 cluster=(nova-aio)
@@ -56,7 +64,7 @@ x_with_cluster "Running first chef pass" nova-aio <<EOF
 chef-client -ldebug
 EOF
 
-if ( ! run_tests nova-aio essex-final ); then
+if ( ! run_tests nova-aio essex-final nova glance keystone); then
     echo "Tests failed."
     exit 1
 fi
@@ -64,7 +72,4 @@ fi
 # let's grab the logs
 cluster_fetch_file "/etc/{nova,glance,keystone}/*log" ./logs
 
-if [ ! -z "${BUILD_URL}" ] && [ ! -z "${GIT_COMMENT_URL:-}" ]; then
-    msg="Gate: Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
-    github_post_comment ${GIT_COMMENT_URL} ${msg}
-fi
+github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"

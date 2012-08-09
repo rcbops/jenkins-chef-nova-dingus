@@ -84,7 +84,21 @@ function checkout_cookbooks() {
     cd chef-cookbooks
     git checkout ${master_branch}
     git submodule init
-    git submodule update
+
+    # github, y u no work?
+    local count=1
+
+    while [ $count -lt 10 ] && ! git submodule update; do
+        sleep 10
+        count=$((count + 1))
+    done
+
+    if [ $count -ge 10 ]; then
+        # submodule update failed...
+        echo "your github is b0rken"
+        return 1
+    fi
+
 
     pushd cookbooks
     # Okay, now start going through the overrides

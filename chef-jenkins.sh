@@ -50,7 +50,9 @@ function cleanup() {
     echo "----------------- cleanup"
 
     for pid in ${!PIDS[@]}; do
-        kill -TERM ${pid}
+        if kill -0 ${pid}; then
+            kill -TERM ${pid}
+        fi
     done
 
     collect_tasks viciously
@@ -320,7 +322,8 @@ function collect_tasks() {
         oldtrap=$(trap -p ERR)
         trap - ERR
 
-        wait $pid
+        result=0
+        wait $pid > /dev/null 2>&1
         result=$?
 
         eval ${oldtrap}
@@ -334,7 +337,7 @@ function collect_tasks() {
         fi
 
         if [ ${result} -ne 0 ] || [ ${DEBUG:-0} -ne 0 ]; then
-            if [ -z ${1:-} ] || [ $failcout -gt 1 ]; then  # only show first
+            if [ -z ${1:-} ] || [ $failcount -gt 1 ]; then  # only show first
                 echo "Output: "
                 cat ${PIDS[$pid]}
             fi
@@ -364,7 +367,7 @@ function prepare_chef() {
         # cp ${SOURCE_DIR}/files/{chefadmin,validation}.pem ${TMPDIR}/chef/${server}
         cat > ${TMPDIR}/chef/${server}/knife.rb <<-EOF
             log_level                :info
-            log_location             STDOUT
+            log_location             "/tmp/foo.txt"
             node_name                "chefadmin"
             client_key               "${TMPDIR}/chef/${server}/chefadmin.pem"
             validation_client_name   "chef-validator"
@@ -378,15 +381,25 @@ EOF
 
 function create_chef_environment() {
     # $1 - server
-    # $2 - environment name
+    # $2 - environment file
     local server=$1
     local environment=$2
+
+    local environment_source=${SOURCE_DIR}/files/${environment}.json
+
+    if [ ! -e ${environment_source} ]; then
+        environment_source=${environment}
+        if [ ! -e ${environment_source} ]; then
+            echo "Can't find environment ${environment}"
+            return 1
+        fi
+    fi
 
     prepare_chef ${server}
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
-    EDITOR=/bin/true knife environment from file ${SOURCE_DIR}/files/${environment}.json -c ${knife}
+    EDITOR=/bin/true knife environment from file ${environment_source} -c ${knife}
 }
 
 function set_environment() {
@@ -416,16 +429,42 @@ function set_environment() {
 function run_tests() {
     # $1 - exerstack/kong server
     # $2 - version/component
+    # $3.. - nova/glance/keystone/swift
 
     local server=$1
     local version=$2
 
-    x_with_server "running tests" $1 <<-EOF
+    shift; shift
+
+    declare -A exerstacktests
+    declare -A kongtests
+
+    exerstacktests=(
+        [nova]="euca.sh nova-cli.sh"
+        [glance]="glance.sh"
+        [keystone]="keystone.sh"
+        [swift]="swift.sh"
+    )
+
+    kongtests=(
+        [nova]="--nova"
+        [swift]="--swift"
+    )
+
+    local exerstack_tests=""
+    local kong_tests=""
+
+    for d in "$@"; do
+        exerstack_tests+="${exerstacktests[${d}]:-} "
+        kong_tests+="${kongtests[${d}]:-} "
+    done
+
+    x_with_server "running tests" ${server} <<-EOF
         cd /opt/exerstack
-        ONESHOT=1 ./exercise.sh ${version} euca.sh glance.sh keystone.sh nova-cli.sh
+        ONESHOT=1 ./exercise.sh ${version} ${exerstack_tests}
 
         cd /opt/kong
-        ./run_tests.sh --version ${version} --nova
+        ./run_tests.sh --version ${version} ${kong_tests}
 EOF
     fc_do
 }
@@ -447,9 +486,8 @@ function set_node_attribute() {
     local chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
 
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
-    ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
-    ${SOURCE_DIR}/files/jsoncli.py -s 'json_class="Chef::Node"' ${TMPDIR}/${chef_node_name}-new.json > ${TMPDIR}/${chef_node_name}-new2.json
-    knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new2.json
+    ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}"  -s 'json_class="Chef::Node"' ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
+    knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new.json
 }
 
 
@@ -620,12 +658,17 @@ function template_file() {
     local src=$1
     local dest=$2
 
-    if [ ! -e ${SOURCE_DIR}/templates/${dest} ]; then
-        echo "Template file ${src} does not exist"
-        return 1
+    local full_src=${SOURCE_DIR}/templates/${src}
+
+    if [ ! -e ${full_src} ]; then
+        full_src=${src}
+        if [ ! -e ${full_src} ]; then
+            echo "Template file ${src} does not exist"
+            return 1
+        fi
     fi
 
-    eval "echo \"$(< ${SOURCE_DIR}/templates/${src})\"" > ${dest}
+    eval "echo \"$(< ${full_src})\"" > ${dest}
 }
 
 # grab log files from all the nodes in a cluster

@@ -1,10 +1,16 @@
 #!/bin/bash
 
-INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
+#INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
+CHEF_IMAGE=chef
+INSTANCE_IMAGE=bridge-precise
 
 source $(dirname $0)/chef-jenkins.sh
 
 init
+
+if [ ${USE_CS} -eq 1 ]; then
+    INSTANCE_IMAGE=ubuntu-precise
+fi
 
 declare -a cluster
 cluster=(mysql keystone glance api horizon compute1 compute2)
@@ -14,8 +20,10 @@ wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading cookbooks" chef-server <<EOF
 apt-get update
+flush_iptables
 install_package git-core
-rabbitmq_fixup oociahez
+rabbitmq_fixup
+chef_fixup
 checkout_cookbooks
 upload_cookbooks
 upload_roles
@@ -35,8 +43,9 @@ create_chef_environment chef-server nova-cluster
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
 apt-get update
+flush_iptables
 install_chef_client
-copy_file validation.pem /etc/chef/validation.pem
+fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
 chef-client -ldebug
@@ -100,7 +109,7 @@ ip addr add 192.168.100.254/24 dev br99
 EOF
 fc_do
 
-if ( ! run_tests api essex-final ); then
+if ( ! run_tests api essex-final nova glance keystone ); then
     echo "Tests failed."
     exit 1
 fi

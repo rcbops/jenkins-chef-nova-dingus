@@ -5,6 +5,18 @@
     },
     "json_class": "Chef::Environment",
     "override_attributes": {
+        "swift": {
+            "use_informant": false,
+            "authkey": "3f281b71-ce89-4b27-a2ad-ad873d3f2760",
+            "swift_hash": "107c0568ea84",
+            "auto_rebuild_rings": true,
+            "authmode": "keystone",
+            "disk_test_filter": [
+                "candidate =~ /vd[^a]/",
+                "File.exist?('/dev/' + candidate)",
+                "info['removable'] = 0"
+            ]
+        },
         "nova": {
             "apply_patches": true,
             "libvirt": {
@@ -15,7 +27,7 @@
                     "network_size": "255",
                     "bridge_dev": "eth0",
                     "ipv4_cidr": "192.168.100.0/24",
-                    "bridge": "br100",
+                    "bridge": "br99",
                     "dns1": "8.8.8.8",
                     "dns2": "8.8.4.4",
                     "num_networks": "1",
@@ -25,6 +37,9 @@
         },
         "glance": {
             "image_upload": true,
+            "api": {
+                "default_store": "swift"
+            },
             "images": [
                 "cirros"
             ]
@@ -36,10 +51,12 @@
         "osops_networks": {
             "management": "10.0.0.0/8",
             "nova": "10.0.0.0/8",
+            "swift": "10.0.0.0/8",
+            "swift-lb": "10.0.0.0/8",
             "public": "10.0.0.0/8"
         }
     },
-    "name": "nova-aio",
+    "name": "bigcluster",
     "chef_type": "environment",
     "description": ""
 }
