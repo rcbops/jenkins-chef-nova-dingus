@@ -36,7 +36,7 @@
             ]
         },
         "glance": {
-            "image_upload": true,
+            "image_upload": false,
             "api": {
                 "default_store": "swift"
             },

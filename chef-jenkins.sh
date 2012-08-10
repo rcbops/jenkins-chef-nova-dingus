@@ -490,6 +490,23 @@ function set_node_attribute() {
     knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new.json
 }
 
+function set_environment_attribute() {
+    # $1 chef server
+    # $2 environment name
+    # $3 key
+    # $4 value
+
+    local server=$1
+    local environment=$2
+    local key=$3
+    local value=$4
+
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    knife environment show ${environment} -fj -c ${knife} > ${TMPDIR}/env-${environment}.json
+    ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/env-${environment}.json > ${TMPDIR}/env-${environment}-new.json
+    knife environment from file -c ${knife} ${TMPDIR}/env-${environment}-new.json
+}
 
 function role_add() {
     # $1 - chef server
