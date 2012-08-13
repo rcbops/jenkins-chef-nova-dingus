@@ -17,6 +17,9 @@
                 "info['removable'] = 0"
             ]
         },
+        "osops": {
+            "apply_patches": true
+        },
         "nova": {
             "apply_patches": true,
             "libvirt": {
