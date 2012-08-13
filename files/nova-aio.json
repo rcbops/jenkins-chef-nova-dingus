@@ -5,6 +5,9 @@
     },
     "json_class": "Chef::Environment",
     "override_attributes": {
+        "osops": {
+            "apply_patches": true
+        },
         "nova": {
             "apply_patches": true,
             "libvirt": {
