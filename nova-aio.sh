@@ -3,8 +3,8 @@
 #INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
 CHEF_IMAGE=chef
 INSTANCE_IMAGE=bridge-precise
-CHEF_FLAVOR=3
-IMAGE_FLAVOR=3
+# CHEF_FLAVOR=3
+# IMAGE_FLAVOR=3
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -16,6 +16,12 @@ fi
 
 declare -a cluster
 cluster=(nova-aio)
+
+rm -rf logs
+mkdir -p logs/run
+exec 9>logs/run/out.log
+BASH_XTRACEFD=9
+set -x
 
 boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
@@ -64,12 +70,22 @@ x_with_cluster "Running first chef pass" nova-aio <<EOF
 chef-client -ldebug
 EOF
 
+retval=0
 if ( ! run_tests nova-aio essex-final nova glance keystone); then
     echo "Tests failed."
-    exit 1
+    retval=1
 fi
 
 # let's grab the logs
-cluster_fetch_file "/etc/{nova,glance,keystone}/*log" ./logs
+x_with_cluster "Fixing log perms" nova-aio <<"EOF"
+#chmod 644 "/var/log/\{nova,glance,keystone\}/\*log"
+find /var/log -type f -exec chmod 644 {} \;
+EOF
 
-github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
+cluster_fetch_file "/var/log/{nova,glance,keystone}/*log" ./logs ${cluster[@]}
+
+if [ $retval -eq 0 ]; then
+    github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
+fi
+
+exit $retval
