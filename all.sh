@@ -6,6 +6,12 @@ source $(dirname $0)/chef-jenkins.sh
 
 init
 
+rm -rf logs
+mkdir -p logs/run
+exec 9>logs/run/out.log
+BASH_XTRACEFD=9
+set -x
+
 declare -a cluster
 cluster=(mysql keystone glance api horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
@@ -136,7 +142,21 @@ EOF
 background_task "fc_do"
 collect_tasks
 
+x_with_cluster "Fixing log perms" ${cluster[@]} <<EOF
+chmod 755 /var/log/nova
+EOF
+
+retval=0
+
 if ( ! run_tests api essex-final nova glance swift keystone); then
     echo "Tests failed."
-    exit 1
+    retval=1
 fi
+
+cluster_fetch_file "/var/log/{nova,glance,keystone}/*log" ./logs ${cluster[@]}
+
+if [ $retval -eq 0 ]; then
+    github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
+fi
+
+exit $retval

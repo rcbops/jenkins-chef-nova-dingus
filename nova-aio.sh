@@ -77,9 +77,8 @@ if ( ! run_tests nova-aio essex-final nova glance keystone); then
 fi
 
 # let's grab the logs
-x_with_cluster "Fixing log perms" nova-aio <<"EOF"
-#chmod 644 "/var/log/\{nova,glance,keystone\}/\*log"
-find /var/log -type f -exec chmod 644 {} \;
+x_with_cluster "Fixing log perms" nova-aio <<EOF
+chmod 755 /var/log/nova
 EOF
 
 cluster_fetch_file "/var/log/{nova,glance,keystone}/*log" ./logs ${cluster[@]}
