@@ -23,6 +23,7 @@ else
     LOGIN=${LOGIN:-ubuntu}
 fi
 NOCLEAN=${NOCLEAN:-0}
+DEPLOY=${DEPLOY:-0}
 GITHUB_CREDENTIALS="${GITHUB_CREDENTIALS:-${SOURCE_DIR}/files/github-credentials}"
 
 declare -A TYPEMAP
@@ -41,6 +42,12 @@ OPERANT_TASK=""
 PARENT_PID=$$
 declare -a FC_TASKS
 
+# setting the NOCLEAN variable to non-zero will not clean up
+# instances if it exited in failure.
+#
+# setting DEPLOY to non-zero will not clean up instances
+# in any situation
+#
 function cleanup() {
     local retval=$?
 
@@ -62,7 +69,9 @@ function cleanup() {
         if [ -e ${TMPDIR}/nodes ]; then
             for d in ${TMPDIR}/nodes/*; do
                 source ${d}
-                background_task "terminate_server ${NODE_FRIENDLY_NAME}"
+                if [ ${DEPLOY} -ne 1 ]; then
+                    background_task "terminate_server ${NODE_FRIENDLY_NAME}"
+                fi
             done
         fi
         collect_tasks
