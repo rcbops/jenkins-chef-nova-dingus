@@ -142,18 +142,20 @@ EOF
 background_task "fc_do"
 collect_tasks
 
-x_with_cluster "Fixing log perms" ${cluster[@]} <<EOF
-chmod 755 /var/log/nova
-EOF
-
 retval=0
 
-if ( ! run_tests api essex-final nova glance swift keystone); then
+if ( ! run_tests api essex-final nova glance swift keystone glance-swift ); then
     echo "Tests failed."
     retval=1
 fi
 
-cluster_fetch_file "/var/log/{nova,glance,keystone}/*log" ./logs ${cluster[@]}
+x_with_cluster "Fixing log perms" keystone glance api horizon compute1 compute2  <<EOF
+if [ -e /var/log/nova ]; then chmod 755 /var/log/nova; fi
+if [ -e /var/log/keystone ]; then chmod 755 /var/log/keystone; fi
+if [ -e /var/log/apache2 ]; then chmod 755 /var/log/apache2; fi
+EOF
+
+cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${cluster[@]}
 
 if [ $retval -eq 0 ]; then
     github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"

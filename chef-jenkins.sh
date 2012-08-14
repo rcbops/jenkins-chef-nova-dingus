@@ -458,6 +458,7 @@ function run_tests() {
     kongtests=(
         [nova]="--nova"
         [swift]="--swift"
+        [glance-swift]="--glance-swift"
     )
 
     local exerstack_tests=""
@@ -658,7 +659,6 @@ function setup_private_network() {
     fc_reset_tasks
     OPERANT_SERVER=${hubdev}
 
-    echo "DOING HUB"
     for host in $@; do
         declare -a hostinfo
         hostinfo=(${host//:/ })
@@ -729,7 +729,7 @@ function fetch_file() {
     local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     local user=${LOGIN}
 
-    scp -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}"
+    scp -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
 }
 
 # we'll just lisp this up a bit - a cluster partial for you, wilk
