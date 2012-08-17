@@ -93,11 +93,11 @@ role_add chef-server compute2 "role[single-compute]"
 set_environment_attribute chef-server cloudfiles "override_attributes/glance/image_upload" "true"
 
 # set environment to use swift/cloudfiles for image storage
-set_environment_attribute chef-server cloudfiles "default_attributes/glance/api/default_store" "swift"
-set_environment_attribute chef-server cloudfiles "default_attributes/glance/api/swift_store_user" ${ST_USER}
-set_environment_attribute chef-server cloudfiles "default_attributes/glance/api/swift_store_key" ${ST_KEY}
-set_environment_attribute chef-server cloudfiles "default_attributes/glance/api/swift_store_version" ${ST_AUTH_VERSION}
-set_environment_attribute chef-server cloudfiles "default_attributes/glance/api/swift_store_address" ${ST_AUTH}
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/default_store" "swift"
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_user" ${ST_USER}
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_key" ${ST_KEY}
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_version" ${ST_AUTH_VERSION}
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_address" ${ST_AUTH}
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
