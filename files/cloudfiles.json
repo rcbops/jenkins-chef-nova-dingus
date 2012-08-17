@@ -28,7 +28,11 @@
         "glance": {
             "image_upload": false,
             "api": {
-                "default_store": "file"
+                "default_store": "swift",
+                "swift_store_user": "changeme",
+                "swift_store_key": "changeme",
+                "swift_store_auth_version": "2",
+                "swift_store_auth_address": "https://identity.api.rackspacecloud.com/v2.0/"
             },
             "images": [
                 "cirros"
