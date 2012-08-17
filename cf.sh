@@ -72,7 +72,7 @@ EOF
 role_add chef-server glance "role[glance-registry]"
 role_add chef-server glance "role[glance-api]"
 
-x_with_cluster "Installing glance and swift proxy" glance <<EOF
+x_with_cluster "Installing glance" glance <<EOF
 chef-client -ldebug
 EOF
 
@@ -88,12 +88,6 @@ role_add chef-server api "recipe[exerstack]"
 role_add chef-server horizon "role[horizon-server]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
-
-# run the proxy to generate the ring, now that we
-# have discovered disks (ephemeral0)
-x_with_cluster "proxy/api/horizon/computes" proxy api horizon compute{1..2} <<EOF
-chef-client -ldebug
-EOF
 
 # turn on glance uploads again
 set_environment_attribute chef-server cloudfiles "override_attributes/glance/image_upload" "true"
