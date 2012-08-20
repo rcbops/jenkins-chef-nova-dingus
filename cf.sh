@@ -118,7 +118,7 @@ collect_tasks
 
 retval=0
 
-if ( ! run_tests api essex-final nova glance swift keystone glance-swift ); then
+if ( ! run_tests api essex-final nova glance keystone glance-swift ); then
     echo "Tests failed."
     retval=1
 fi
