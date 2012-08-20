@@ -110,6 +110,9 @@ x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client -ldebug
 EOF
 
+x_with_server "fixerating" api <<EOF
+ip addr add 192.168.100.254/24 dev br99
+EOF
 background_task "fc_do"
 collect_tasks
 
