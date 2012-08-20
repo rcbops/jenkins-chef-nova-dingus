@@ -3,6 +3,7 @@
 INSTANCE_IMAGE=bridge-precise
 
 source $(dirname $0)/chef-jenkins.sh
+source $(dirname $0)/files/cloudfiles-credentials
 
 init
 
@@ -41,6 +42,14 @@ setup_private_network br100 br99 api ${cluster[@]}
 
 create_chef_environment chef-server cloudfiles
 set_environment_attribute chef-server cloudfiles "override_attributes/glance/image_upload" "false"
+
+# set environment to use swift/cloudfiles for image storage
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/default_store" "\"swift\""
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
+set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
+
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
 apt-get update
@@ -95,13 +104,6 @@ role_add chef-server compute2 "role[single-compute]"
 
 # turn on glance uploads again
 set_environment_attribute chef-server cloudfiles "override_attributes/glance/image_upload" "true"
-
-# set environment to use swift/cloudfiles for image storage
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/default_store" "\"swift\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
