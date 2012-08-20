@@ -83,6 +83,10 @@ role_add chef-server api "role[nova-api-os-compute]"
 role_add chef-server api "role[nova-vncproxy]"
 role_add chef-server api "role[nova-volume]"
 
+x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
+chef-client -ldebug
+EOF
+
 role_add chef-server api "recipe[kong]"
 role_add chef-server api "recipe[exerstack]"
 role_add chef-server horizon "role[horizon-server]"
