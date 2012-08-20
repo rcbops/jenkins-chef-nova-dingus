@@ -50,6 +50,9 @@ set_environment_attribute chef-server cloudfiles "override_attributes/glance/api
 set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
 set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
 
+# set kong swift_store_endpoint
+set_environment_attribute chef-server cloudfiles "override_attributes/kong/swift_store_region" "\"DFW\""
+
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
 apt-get update
