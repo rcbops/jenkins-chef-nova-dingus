@@ -50,6 +50,7 @@ declare -a FC_TASKS
 #
 function cleanup() {
     local retval=$?
+    local exitval=$retval
 
     trap - ERR EXIT
     set +e
@@ -79,8 +80,8 @@ function cleanup() {
         collect_tasks
     fi
 
-    echo "Exiting with return value of ${retval}"
-    exit ${retval}
+    echo "Exiting with return value of ${exitval}"
+    exit ${exitval}
 }
 
 function init() {
