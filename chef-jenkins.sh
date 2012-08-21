@@ -57,8 +57,10 @@ function cleanup() {
     echo "----------------- cleanup"
 
     for pid in ${!PIDS[@]}; do
-        if kill -0 ${pid}; then
-            kill -TERM ${pid}
+        if [ ${pid} -ne 0 ]; then
+            if kill -0 ${pid}; then
+                kill -TERM ${pid}
+            fi
         fi
     done
 
