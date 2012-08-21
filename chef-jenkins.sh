@@ -229,7 +229,7 @@ function github_post_comment() {
 
 #curl -s -K ~/.rcbjenkins-git-creds ${GIT_COMMENT_URL} -X 'POST' -d '{"body": "Gate: Nova All-In-One\n * '${BUILD_URL}'consoleFull : SUCCESS"}'
 
-    curl -s -K ${GITHUB_CREDENTIALS} ${comment_url} -X 'POST' -d '{"body": "${body}" }'
+    curl -s -K ${GITHUB_CREDENTIALS} ${comment_url} -X 'POST' -d '{"body": '${body}' }'
 
 }
 
