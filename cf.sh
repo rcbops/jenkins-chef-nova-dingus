@@ -135,7 +135,7 @@ EOF
 cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${cluster[@]}
 
 if [ $retval -eq 0 ]; then
-    if [ -n "${GIT_COMMENT_URL}" ] || [ -n "${BUILD_URL}" ]; then
+    if [ -n "${GIT_COMMENT_URL}" ]; then
         github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
     fi
 fi
