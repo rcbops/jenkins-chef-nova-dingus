@@ -160,6 +160,8 @@ cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${clust
 if [ $retval -eq 0 ]; then
     if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
         github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO\n * ${BUILD_URL}consoleFull : SUCCESS"
+    else
+        echo "skipping building comment"
     fi
 fi
 
