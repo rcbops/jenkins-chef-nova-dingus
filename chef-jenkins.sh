@@ -56,6 +56,7 @@ function cleanup() {
     set +e
 
     echo "----------------- cleanup"
+    echo "----------------- exitval=${exitval}"
 
     for pid in ${!PIDS[@]}; do
         if [ ${pid} -ne 0 ]; then
