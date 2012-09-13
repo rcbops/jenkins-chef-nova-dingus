@@ -110,7 +110,7 @@ function checkout_cookbooks() {
             repo_info=(${override//,/ })
             local repo=${repo_info[0]}
             local branch=${repo_info[1]:-master}
-            local dirname=${repo##*/}
+            local dirname=$(echo ${repo##*/}|cut -d'.' -f1)
 
             if [ -e ${dirname} ]; then
                 rm -rf ${dirname}
