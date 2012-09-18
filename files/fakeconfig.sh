@@ -15,6 +15,12 @@ else
     PLATFORM=debian
 fi
 
+function update_package_provider() {
+    if [ $PLATFORM = "debian" ]; then
+        DEBIAN_FRONTEND=noninteractive apt-get update
+    fi
+}
+
 function install_package() {
     if [ $PLATFORM = "debian" ]; then
         DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes "$@"

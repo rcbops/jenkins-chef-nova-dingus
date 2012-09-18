@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INSTANCE_IMAGE=bridge-precise
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -13,7 +13,7 @@ boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
-apt-get update
+update_package_provider
 flush_iptables
 install_package git-core
 rabbitmq_fixup
@@ -41,7 +41,7 @@ cp /tmp/newfstab /etc/fstab
 EOF
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
-apt-get update
+update_package_provider
 flush_iptables
 install_chef_client
 fetch_validation_pem $(ip_for_host chef-server)

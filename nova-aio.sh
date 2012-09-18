@@ -1,8 +1,7 @@
 #!/bin/bash
 
-#INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
 CHEF_IMAGE=chef
-INSTANCE_IMAGE=bridge-precise
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
 # CHEF_FLAVOR=3
 # IMAGE_FLAVOR=3
 
@@ -27,7 +26,7 @@ boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading chef cookbooks" chef-server <<EOF
-apt-get update
+update_package_provider
 flush_iptables
 install_package git-core
 rabbitmq_fixup
@@ -49,7 +48,7 @@ echo "Cluster booted... configuring chef"
 create_chef_environment chef-server nova-aio
 
 x_with_cluster "Installing/registering chef client" nova-aio <<EOF
-apt-get update
+update_package_provider
 flush_iptables
 install_chef_client
 fetch_validation_pem $(ip_for_host chef-server)
