@@ -134,7 +134,7 @@ function checkout_cookbooks() {
     if [ "${GIT_DIFF_URL:-}" != "" ]; then
         if [ "${GIT_REPO:-}" != "" ]; then
             cd ${GIT_REPO}
-            curl -s ${GIT_DIFF_URL} | git apply
+            curl -s ${GIT_DIFF_URL} | git apply -v --whitespace=fix
         fi
     fi
 
