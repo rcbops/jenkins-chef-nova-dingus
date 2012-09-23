@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
 

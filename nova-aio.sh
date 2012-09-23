@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 CHEF_IMAGE=chef
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
