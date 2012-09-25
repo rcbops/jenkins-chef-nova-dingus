@@ -7,6 +7,9 @@ source $(dirname $0)/files/cloudfiles-credentials
 
 init
 
+CHEF_ENV="cloudfiles${JOBID}"
+echo "using environment ${CHEF_ENV}"
+
 rm -rf logs
 mkdir -p logs/run
 exec 9>logs/run/out.log
@@ -40,18 +43,18 @@ setup_private_network br100 br99 api ${cluster[@]}
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 
-create_chef_environment chef-server cloudfiles
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/image_upload" "false"
+create_chef_environment chef-server ${CHEF_ENV}
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # set environment to use swift/cloudfiles for image storage
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/default_store" "\"swift\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
 
 # set kong swift_store_endpoint
-set_environment_attribute chef-server cloudfiles "override_attributes/kong/swift_store_region" "\"DFW\""
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
 
 
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
@@ -67,7 +70,7 @@ EOF
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
 for d in "${cluster[@]}"; do
-    set_environment chef-server ${d} cloudfiles
+    set_environment chef-server ${d} ${CHEF_ENV} 
 done
 
 role_add chef-server mysql "role[mysql-master]"
@@ -106,7 +109,7 @@ role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
 # turn on glance uploads again
-set_environment_attribute chef-server cloudfiles "override_attributes/glance/image_upload" "true"
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF

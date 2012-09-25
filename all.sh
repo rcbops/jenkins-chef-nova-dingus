@@ -6,6 +6,9 @@ source $(dirname $0)/chef-jenkins.sh
 
 init
 
+CHEF_ENV="bigcluster${JOBID}"
+echo "using environment ${CHEF_ENV}"
+
 rm -rf logs
 mkdir -p logs/run
 exec 9>logs/run/out.log
@@ -39,8 +42,8 @@ setup_private_network br100 br99 api ${cluster[@]}
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 
-create_chef_environment chef-server bigcluster
-set_environment_attribute chef-server bigcluster "override_attributes/glance/image_upload" "false"
+create_chef_environment chef-server ${CHEF_ENV}
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # fix up the storage nodes
 x_with_cluster "un-fscking ephemerals" storage1 storage2 storage3 <<EOF
@@ -63,7 +66,7 @@ EOF
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
 for d in "${cluster[@]}"; do
-    set_environment chef-server ${d} bigcluster
+    set_environment chef-server ${d} ${CHEF_ENV}
 done
 
 role_add chef-server mysql "role[mysql-master]"
@@ -128,7 +131,7 @@ chef-client -ldebug
 EOF
 
 # turn on glance uploads again
-set_environment_attribute chef-server bigcluster "override_attributes/glance/image_upload" "true"
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
