@@ -8,6 +8,7 @@ init
 
 CHEF_ENV="bigcluster${JOBID}"
 echo "using environment ${CHEF_ENV}"
+echo "Using INSTANCE_IMAGE ${INSTANCE_IMAGE}"
 
 rm -rf logs
 mkdir -p logs/run
