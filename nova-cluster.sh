@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #INSTANCE_IMAGE=6faf41e1-5029-4cdb-8a66-8559b7bd1f1f
 CHEF_IMAGE=chef

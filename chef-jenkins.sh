@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/usr/bin/env bash -x
 
 # set up a job-id to be something other than random
 # particularly if we're running under jenkins
@@ -31,6 +31,7 @@ TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}
 
 # sensible defaults
 SPINDOWN_TIMEOUT=${SPINDOWN_TIMEOUT:-60}
+NETWORK_SPINUP_TIMEOUT=${NETWORK_SPINUP_TIMEOUT:-30}
 SPINUP_TIMEOUT=${SPINUP_TIMEOUT:-60}
 ACCESS_NETWORK=${ACCESS_NETWORK:-public}
 SSH_TIMEOUT=${SSH_TIMEOUT:-240}
@@ -106,6 +107,7 @@ function init() {
         USE_CS=1
         LOGIN=root
         SPINUP_TIMEOUT=600
+        NETWORK_SPINUP_TIMEOUT=120
     fi
 
     if [ ${DEBUG:-0} -eq 1 ]; then
@@ -180,7 +182,7 @@ function boot_and_wait() {
 
     local count=0
 
-    while [ "$ip" = "" ] && (( count < 30 )); do
+    while [ "$ip" = "" ] && (( count < ${NETWORK_SPINUP_TIMEOUT:-60} )); do
         sleep 2
 
         ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | cut -d'|' -f3 | tr -d ' ' | tr , '\n' | egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
@@ -429,7 +431,7 @@ function set_environment() {
     local full_node_name=${JOBID}-${node}
     local chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
 
-    echo "Setting ${node} to environment ${environment}"
+    echo "Setting ${node} (${chef_node_name}) to environment ${environment}"
 
 #    knife node show ${chef_node_name} -c ${knife}
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json

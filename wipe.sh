@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # stupid cleanup script
 
 # . nova-credentials
