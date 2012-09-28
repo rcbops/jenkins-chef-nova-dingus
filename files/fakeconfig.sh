@@ -54,8 +54,8 @@ function rabbitmq_fixup() {
 
     if (! rabbitmqctl list_vhosts | grep -q chef ); then
         run_twice rabbitmqctl add_vhost /chef
-        run_twice rabbitmqctl add_user chef ${amqp_password}
-        run_twice rabbitmqctl set_permissions -p /chef chef \".*\" \".*\" \".*\"
+        rabbitmqctl add_user chef ${amqp_password}
+        rabbitmqctl set_permissions -p /chef chef ".*" ".*" ".*"
     fi
 }
 
