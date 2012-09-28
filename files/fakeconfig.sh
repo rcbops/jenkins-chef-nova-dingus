@@ -15,6 +15,15 @@ else
     PLATFORM=debian
 fi
 
+function run_twice() {
+    local cmd_to_run="$@"
+    if ! $cmd_to_run; then
+        # try it again!
+        sleep 10
+        $cmd_to_run
+    fi
+}
+
 function update_package_provider() {
     if [ $PLATFORM = "debian" ]; then
         DEBIAN_FRONTEND=noninteractive apt-get update
@@ -44,9 +53,9 @@ function rabbitmq_fixup() {
     fi
 
     if (! rabbitmqctl list_vhosts | grep -q chef ); then
-        rabbitmqctl add_vhost /chef
-        rabbitmqctl add_user chef ${amqp_password}
-        rabbitmqctl set_permissions -p /chef chef ".*" ".*" ".*"
+        run_twice rabbitmqctl add_vhost /chef
+        run_twice rabbitmqctl add_user chef ${amqp_password}
+        run_twice rabbitmqctl set_permissions -p /chef chef ".*" ".*" ".*"
     fi
 }
 
