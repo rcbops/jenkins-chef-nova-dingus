@@ -24,6 +24,37 @@ function run_twice() {
     fi
 }
 
+function add_repo_key() {
+    # $1 - repo
+    #
+    # The actual key might vary based on repo, this should be factored out
+    # if we need to at some point
+    #
+    if [ ${PLATFORM} = "debian" ]; then
+        apt-key adv --keyserver hkp://pgp.mit.edu --recv-keys 765C5E49F87CBDE0
+    else
+        echo "add_repo_key not implemented for non-debian"
+        exit 1
+    fi
+}
+
+
+function add_repo() {
+    # $1 repo description
+
+    local repo_file=/etc/apt/sources.list.d/${1}.list
+    local repo_contents="deb http://build.monkeypuppetlabs.com/proposed-packages/rcb-utils precise rcb-utils"
+    if [ ${PLATFORM} = "debian" ]; then
+        if [ $1 == "proposed" ]; then
+            echo "${repo_contents}" > ${repo_file}
+        fi
+    else
+        # probably repo files go somewhere else on RH.  Joe?
+        echo "add_repo not implemented for non-debian distros"
+        exit 1
+    fi
+}
+
 function update_package_provider() {
     if [ $PLATFORM = "debian" ]; then
         DEBIAN_FRONTEND=noninteractive apt-get update

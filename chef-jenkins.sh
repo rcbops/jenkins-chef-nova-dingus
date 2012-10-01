@@ -600,11 +600,25 @@ function x_with_cluster() {
 }
 
 function fc_add_task() {
+    local file_path=""
+
     if [ "$1" == "copy_file" ]; then
         if [ -e "${SOURCE_DIR}/files/$2" ]; then
-            mkdir -p ${TMPDIR}/dirtree/${OPERANT_SERVER}
-            cp ${SOURCE_DIR}/files/$2 ${TMPDIR}/dirtree/${OPERANT_SERVER}
+            file_path="${SOURCE_DIR}/files/$2"
+        elif [ -e "$2" ]; then
+            file_path=$2
         fi
+
+        if [ "${file_path}" = "" ]; then
+            echo "Can't find file ${file_path} for copy_file"
+            exit 1
+        fi
+
+        mkdir -p ${TMPDIR}/dirtree/${OPERANT_SERVER}
+        cp "${file_path}" ${TMPDIR}/dirtree/${OPERANT_SERVER}
+
+        FC_TASKS[${#FC_TASKS[@]}]="copy_file $(basename ${file_path}) $3"
+        return 0
     fi
 
     FC_TASKS[${#FC_TASKS[@]}]="$@"
