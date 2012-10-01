@@ -7,7 +7,7 @@ source $(dirname $0)/files/cloudfiles-credentials
 
 init
 
-CHEF_ENV="cloudfiles"
+CHEF_ENV="cloudfiles-${INSTANCE_IMAGE}"
 echo "using environment ${CHEF_ENV}"
 echo "Using INSTANCE_IMAGE ${INSTANCE_IMAGE}"
 

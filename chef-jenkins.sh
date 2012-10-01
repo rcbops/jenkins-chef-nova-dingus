@@ -399,22 +399,32 @@ function create_chef_environment() {
     # $2 - environment file
     local server=$1
     local environment=$2
+    # assumes an environment name like bigcluster-bridge-precise
+    local environment_basename=$(echo ${environment} | cut -d'-' -f1)
 
-    local environment_source=${SOURCE_DIR}/files/${environment}.json
+    local environment_source=${SOURCE_DIR}/files/${environment_basename}.json
 
     if [ ! -e ${environment_source} ]; then
-        environment_source=${environment}
+        environment_source=${environment_basename}
         if [ ! -e ${environment_source} ]; then
-            echo "Can't find environment ${environment}"
+            echo "Can't find environment template for ${environment_basename}"
             return 1
         fi
     fi
+
+    # now copy the template and edit appropriately
+    temp_env_file=$(mktemp ${TMPDIR}/${environment}.XXXXXX)
+    cp ${environment_source} ${temp_env_file}
+    sed -i -e "s/${environment_basename}/${environment}/" ${temp_env_file}
 
     prepare_chef ${server}
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
-    EDITOR=/bin/true knife environment from file ${environment_source} -c ${knife}
+    EDITOR=/bin/true knife environment from file ${tmp_env_file} -c ${knife}
+
+    rm -fr ${temp_env_file}
+
 }
 
 function set_environment() {
