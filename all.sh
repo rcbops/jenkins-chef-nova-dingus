@@ -6,7 +6,7 @@ source $(dirname $0)/chef-jenkins.sh
 
 init
 
-CHEF_ENV="bigcluster-${INSTANCE_IMAGE}"
+CHEF_ENV="bigcluster"
 echo "using environment ${CHEF_ENV}"
 echo "Using INSTANCE_IMAGE ${INSTANCE_IMAGE}"
 
