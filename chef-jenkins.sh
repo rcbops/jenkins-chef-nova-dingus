@@ -413,7 +413,7 @@ function create_chef_environment() {
     fi
 
     # now copy the template and edit appropriately
-    temp_env_file=$(mktemp ${TMPDIR}/${environment}.XXXXXX)
+    temp_env_file="$(mktemp ${TMPDIR}/${environment}-XXXXXX).json"
     cp ${environment_source} ${temp_env_file}
     sed -i -e "s/${environment_basename}/${environment}/" ${temp_env_file}
 
@@ -421,7 +421,7 @@ function create_chef_environment() {
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
-    EDITOR=/bin/true knife environment from file ${tmp_env_file} -c ${knife}
+    EDITOR=/bin/true knife environment from file ${temp_env_file} -c ${knife}
 
     rm -fr ${temp_env_file}
 
