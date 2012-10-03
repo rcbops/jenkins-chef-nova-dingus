@@ -65,7 +65,7 @@ function install_package() {
     if [ $PLATFORM = "debian" ]; then
         DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes "$@"
     else
-        yum install "$@"
+        yum -y install "$@"
     fi
 }
 
