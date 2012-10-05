@@ -7,7 +7,7 @@ source $(dirname $0)/chef-jenkins.sh
 init
 
 if [ ${USE_CS} -eq 1 ]; then
-    INSTANCE_IMAGE=ubuntu-precise
+    INSTANCE_IMAGE=12.04
 fi
 
 declare -a cluster
@@ -32,6 +32,7 @@ flush_iptables
 add_repo_key proposed
 add_repo proposed
 update_package_provider
+install_package psmisc
 EOF
 
 cat > ${TMPDIR}/roush.conf <<EOF
@@ -55,10 +56,10 @@ install_package roush-client
 install_package roush-simple
 install_package roush-agent-input-task
 install_package roush-agent-output-adventurator
+install_package roush-agent-output-chef
 service roush-agent stop
 copy_file ${TMPDIR}/roush.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
-killall -9 python
 service roush-agent start
 EOF
 background_task "fc_do"
@@ -70,12 +71,14 @@ install_package roush-agent-input-task
 service roush-agent stop
 copy_file ${TMPDIR}/roush.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
-killall -9 python
 service roush-agent start
 EOF
 
 x_with_cluster "restarting agent" ${cluster[@]} <<EOF
 service roush-agent restart
 EOF
+
+
+echo "ROUSH_ENDPOINT=http://$(ip_for_host roush-server):8080"
 
 exit $retval
