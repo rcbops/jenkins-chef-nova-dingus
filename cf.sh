@@ -82,32 +82,24 @@ x_with_cluster "Installing mysql" mysql <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server keystone "role[rabbitmq-server]"
-role_add chef-server keystone "role[keystone]"
+role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server glance "role[glance-registry]"
-role_add chef-server glance "role[glance-api]"
+role_add chef-server glance "role[glance-registry],role[glance-api]"
 
 x_with_cluster "Installing glance" glance <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "role[nova-setup]"
-role_add chef-server api "role[nova-scheduler]"
-role_add chef-server api "role[nova-api-ec2]"
-role_add chef-server api "role[nova-api-os-compute]"
-role_add chef-server api "role[nova-vncproxy]"
-role_add chef-server api "role[nova-volume]"
+role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume]"
 
 x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "recipe[kong]"
-role_add chef-server api "recipe[exerstack]"
+role_add chef-server api "recipe[kong],recipe[exerstack]"
 role_add chef-server horizon "role[horizon-server]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
