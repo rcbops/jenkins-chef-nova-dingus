@@ -18,7 +18,7 @@
             "networks": [
                 {
                     "network_size": "255",
-                    "bridge_dev": "eth0",
+                    "bridge_dev": "gretap.api",
                     "ipv4_cidr": "192.168.100.0/24",
                     "bridge": "br99",
                     "dns1": "8.8.8.8",

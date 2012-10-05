@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -38,7 +38,11 @@ boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
-setup_private_network br100 br99 api ${cluster[@]}
+x_with_cluster "installing brctl" ${cluster[@]} <<EOF
+install_package brctl
+EOF
+background_task "fc_do"
+setup_private_network eth0 br99 api ${cluster[@]}
 
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
