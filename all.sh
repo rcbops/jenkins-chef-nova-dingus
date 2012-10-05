@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -38,7 +38,10 @@ boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
-setup_private_network br100 br99 api ${cluster[@]}
+x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
+install_package bridge-utils
+EOF
+setup_private_network eth0 br99 api ${cluster[@]}
 
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
@@ -75,42 +78,31 @@ x_with_cluster "Installing mysql" mysql <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server keystone "role[rabbitmq-server]"
-role_add chef-server keystone "role[keystone]"
+role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server proxy "role[swift-management-server]"
-role_add chef-server proxy "role[swift-proxy-server]"
+role_add chef-server proxy "role[swift-management-server],role[swift-proxy-server]"
 
 for node_no in {1..3}; do
-    role_add chef-server storage${node_no} "role[swift-object-server]"
-    role_add chef-server storage${node_no} "role[swift-container-server]"
-    role_add chef-server storage${node_no} "role[swift-account-server]"
+    role_add chef-server storage${node_no} "role[swift-object-server],role[swift-container-server],role[swift-account-server]"
     set_node_attribute chef-server storage${node_no} "normal/swift" "{\"zone\": ${node_no} }"
 done
 
-role_add chef-server glance "role[glance-registry]"
-role_add chef-server glance "role[glance-api]"
+role_add chef-server glance "role[glance-registry],role[glance-api]"
 
 x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "role[nova-setup]"
-role_add chef-server api "role[nova-scheduler]"
-role_add chef-server api "role[nova-api-ec2]"
-role_add chef-server api "role[nova-api-os-compute]"
-role_add chef-server api "role[nova-vncproxy]"
-role_add chef-server api "role[nova-volume]"
+role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume]"
 
 x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "recipe[kong]"
-role_add chef-server api "recipe[exerstack]"
+role_add chef-server api "recipe[kong],recipe[exerstack]"
 role_add chef-server horizon "role[horizon-server]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"

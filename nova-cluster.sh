@@ -34,7 +34,7 @@ boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
-setup_private_network br100 br99 api ${cluster[@]}
+setup_private_network eth0 br99 api ${cluster[@]}
 
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.

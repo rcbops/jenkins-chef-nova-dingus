@@ -49,9 +49,17 @@ function add_repo() {
             echo "${repo_contents}" > ${repo_file}
         fi
     else
-        # probably repo files go somewhere else on RH.  Joe?
-        echo "add_repo not implemented for non-debian distros"
-        exit 1
+        # This does not work on Fedora - but we don't care right now
+        if [ $1 == "proposed" ]; then
+            cat > /etc/yum.repos.d/rcb <<EOF
+[rcb-testing]
+name=RCB Ops Testing Repo
+baseurl=http://build.monkeypuppetlabs.com/repo-testing/RedHat/6/x86_64
+gpgcheck=1
+gpgkey=http://build.monkeypuppetlabs.com/repo/RPM-GPG-RCB.key
+enabled=1
+EOF
+        fi
     fi
 }
 
