@@ -39,8 +39,8 @@ boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
-x_with_cluster "installing brctl" ${cluster[@]} <<EOF
-install_package brctl
+x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
+install_package bridge-utils
 EOF
 background_task "fc_do"
 setup_private_network eth0 br99 api ${cluster[@]}
