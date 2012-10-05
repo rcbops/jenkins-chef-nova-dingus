@@ -65,7 +65,7 @@ function install_package() {
     if [ $PLATFORM = "debian" ]; then
         DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes "$@"
     else
-        yum install "$@"
+        yum -y install "$@"
     fi
 }
 
@@ -308,4 +308,15 @@ function flush_iptables() {
     iptables -P INPUT ACCEPT
     iptables -P FORWARD ACCEPT
     iptables -P OUTPUT ACCEPT
+}
+
+function fix_for_tests() {
+
+    if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
+        install_package "swift"
+    elif [ $PLATFORM = "redhat" ]; then
+        install_package "openstack-swift"
+    fi
+
+    ip addr add 192.168.100.254/24 dev br99
 }

@@ -140,8 +140,7 @@ chef-client -ldebug
 EOF
 
 x_with_server "fixerating" api <<EOF
-install_package swift
-ip addr add 192.168.100.254/24 dev br99
+fix_for_tests
 EOF
 background_task "fc_do"
 collect_tasks
