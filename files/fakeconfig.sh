@@ -53,7 +53,7 @@ function wait_for_rhn() {
                 echo "rhn did not become active in ${tries} tries"
                 exit 1
             else
-                sleep 1s
+                sleep 5s
                 tries=$(( $tries + 1 ))
             fi
         done
