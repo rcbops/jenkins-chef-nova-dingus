@@ -22,7 +22,6 @@ cluster=(mysql keystone glance api horizon compute1 compute2 graphite)
 
 boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
-wait_for_cluster_rhn ${cluster[@]}
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 update_package_provider
