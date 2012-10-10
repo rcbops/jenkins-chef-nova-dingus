@@ -39,6 +39,28 @@ function add_repo_key() {
 }
 
 
+function wait_for_rhn() {
+    local max_tries=20
+    local tries=0
+
+    if [ $PLATFORM = "debian" ]; then
+        echo "rhn check not supported on debian"
+    elif [ ! -x /usr/sbin/rhn_check ]; then
+        echo "rhn not installed on this system"
+    else
+        while ! /usr/sbin/rhn_check 2>&1>/dev/null; do
+            if [[ ${tries} == ${max_tries} ]]; then
+                echo "rhn did not become active in ${tries} tries"
+                exit 1
+            else
+                sleep 1s
+                tries=$(( $tries + 1 ))
+            fi
+        done
+        echo "rhn active.  errors above this may not be important"
+    fi
+}
+
 function add_repo() {
     # $1 repo description
 
