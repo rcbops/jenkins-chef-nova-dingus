@@ -39,6 +39,7 @@ wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
 x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
+wait_for_rhn
 install_package bridge-utils
 EOF
 setup_private_network eth0 br99 api ${cluster[@]}

@@ -22,6 +22,7 @@ cluster=(mysql keystone glance api horizon compute1 compute2 graphite)
 
 boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
+wait_for_cluster_rhn ${cluster[@]}
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 update_package_provider
@@ -40,6 +41,7 @@ wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
 x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
+wait_for_rhn
 install_package bridge-utils
 EOF
 setup_private_network eth0 br99 api ${cluster[@]}
