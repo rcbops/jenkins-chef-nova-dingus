@@ -94,7 +94,7 @@ x_with_cluster "Installing glance" glance <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume]"
+role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume],role[collectd-client],role[collectd-server],role[graphite]"
 
 x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
 chef-client -ldebug

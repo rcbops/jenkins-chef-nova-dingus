@@ -5,6 +5,10 @@
     },
     "json_class": "Chef::Environment",
     "override_attributes": {
+        "monitoring": {
+            "metric_provider": "collectd",
+            "procmon_provider": "monit"
+        },
         "swift": {
             "use_informant": false,
             "authkey": "3f281b71-ce89-4b27-a2ad-ad873d3f2760",

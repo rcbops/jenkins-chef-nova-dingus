@@ -97,7 +97,7 @@ x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume]"
+role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume],role[collectd-client],role[collectd-server],role[graphite]"
 
 x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
 chef-client -ldebug
