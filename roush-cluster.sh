@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -56,6 +56,7 @@ install_package roush-client
 install_package roush-simple
 install_package roush-agent-input-task
 install_package roush-agent-output-adventurator
+install_package roush-agent-output-service
 install_package roush-agent-output-chef
 service roush-agent stop
 copy_file ${TMPDIR}/roush.conf /etc/roush-agent.conf
