@@ -26,7 +26,14 @@ echo "Cluster booted... configuring apt repos"
 
 # need to add build.mpl
 
+# mirrors.rackspace.com is broken right now
+cat > ${TMPDIR}/sources.list <<EOF
+deb http://mirror.anl.gov/pub/ubuntu/ precise main universe
+deb-src http://mirror.anl.gov/pub/ubuntu/ precise main universe
+EOF
+
 x_with_cluster "setting apt repo" ${cluster[@]} <<EOF
+copy_file ${TMPDIR}/sources.list /etc/apt/sources.list
 update_package_provider
 flush_iptables
 add_repo_key proposed
@@ -79,7 +86,11 @@ x_with_cluster "restarting agent" ${cluster[@]} <<EOF
 service roush-agent restart
 EOF
 
-
 echo "ROUSH_ENDPOINT=http://$(ip_for_host roush-server):8080"
+
+echo ${LOGIN}@$(ip_for_host roush-server) > ~/.dsh/group/roush-cluster
+echo ${LOGIN}@$(ip_for_host roush-agent1) > ~/.dsh/group/roush-cluster
+echo ${LOGIN}@$(ip_for_host roush-agent2) > ~/.dsh/group/roush-cluster
+
 
 exit $retval

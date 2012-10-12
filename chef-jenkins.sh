@@ -106,8 +106,9 @@ function init() {
     if ( grep -q "identity.api.rackspacecloud" ${CREDENTIALS} ); then
         USE_CS=1
         LOGIN=root
-        SPINUP_TIMEOUT=600
-        NETWORK_SPINUP_TIMEOUT=120
+        SPINUP_TIMEOUT=720
+        NETWORK_SPINUP_TIMEOUT=720
+        SSH_TIMEOUT=600
     fi
 
     if [ ${DEBUG:-0} -eq 1 ]; then
@@ -174,7 +175,14 @@ function boot_and_wait() {
     if [ $USE_CS -eq 0 ]; then
         extra_flags="--key_name=${KEYNAME}"
     else
-        extra_flags="--file /root/.ssh/authorized_keys=${SOURCE_DIR}/files/authorized_keys"
+        local key_source=${SOURCE_DIR}/file/authorized_keys
+        if [ ! -e ${key_source} ]; then
+            if [ -e ${HOME}/.ssh/authorized_keys ]; then
+                key_source=${HOME}/.ssh/authorized_keys
+            fi
+        fi
+
+        extra_flags="--file /root/.ssh/authorized_keys=${key_source}"
         LOGIN="root"
     fi
 
@@ -204,16 +212,20 @@ function boot_and_wait() {
     export NODE_IP=${ip}
 EOF
 
-    count=0
-    while [ ! ACTIVE = $(nova show ${name} | grep status | awk '{print $4}') ] && (( count < ${SPINUP_TIMEOUT} )); do
-        sleep 1
-        count=$((count + 1))
-    done
 
-    if [ ${count} -lt ${SPINUP_TIMEOUT} ]; then
-        return 0
-    fi
-    return 1
+    # count=0
+    # while [ "ACTIVE" != "$(nova show ${name} | grep status | awk '{print $4}')" ] && (( count < $(( SPINUP_TIMEOUT / 10)) )); do
+    #     sleep 10
+    #     count=$((count + 1))
+    # done
+
+    # nova show ${name}
+
+    # if [ ${count} -lt $(( SPINUP_TIMEOUT / 10 )) ]; then
+    #     return 0
+    # fi
+    # return 1
+    return 0
 }
 
 
@@ -660,7 +672,7 @@ function fc_do() {
 
     # copy over the template files.  Should be using rsync over ssh
     if [ -e "${TMPDIR}/dirtree/${OPERANT_SERVER}" ]; then
-        ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "mkdir /tmp/fakeconfig"
+        ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "mkdir -p /tmp/fakeconfig"
         scp -i ${PRIVKEY} ${sshopts} ${TMPDIR}/dirtree/${OPERANT_SERVER}/* ${user}@${ip}:/tmp/fakeconfig
     fi
 
