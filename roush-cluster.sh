@@ -44,11 +44,26 @@ EOF
 
 cat > ${TMPDIR}/roush.conf <<EOF
 [main]
+bind_address = 0.0.0.0
+bind_port = 8080
+backend = /usr/share/roush/backends
+database_uri = sqlite:////usr/share/roush/roush.db
+pidfile = /var/run/roush.pid
+
+[ChefClientBackend]
+knife_file = /root/.chef/knife.rb
+role_location = /usr/share/roush/roles
+EOF
+
+cat > ${TMPDIR}/roush-agent.conf <<EOF
+[main]
 base_dir = /usr/share/roush-agent
 plugin_dir =/usr/share/roush-agent/plugins
 input_handlers = /usr/share/roush-agent/plugins/input/task_input.py
 output_handlers = /usr/share/roush-agent/plugins/output
-syslog_dev = /dev/log
+log_file = /var/log/roush-agent.log
+log_level = DEBUG
+#syslog_dev = /dev/log
 pidfile = /var/run/roush-agent.pid
 include_dir = /etc/roush-agent.d
 EOF
@@ -66,8 +81,11 @@ install_package roush-agent-output-adventurator
 install_package roush-agent-output-service
 install_package roush-agent-output-chef
 service roush-agent stop
-copy_file ${TMPDIR}/roush.conf /etc/roush-agent.conf
+service roush stop
+copy_file ${TMPDIR}/roush.conf /usr/share/roush/roush.conf
+copy_file ${TMPDIR}/roush-agent.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
+service roush start
 service roush-agent start
 EOF
 background_task "fc_do"
@@ -77,7 +95,7 @@ install_package roush-agent
 install_package roush-agent-output-chef
 install_package roush-agent-input-task
 service roush-agent stop
-copy_file ${TMPDIR}/roush.conf /etc/roush-agent.conf
+copy_file ${TMPDIR}/roush-agent.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
 service roush-agent start
 EOF
@@ -89,8 +107,8 @@ EOF
 echo "ROUSH_ENDPOINT=http://$(ip_for_host roush-server):8080"
 
 echo ${LOGIN}@$(ip_for_host roush-server) > ~/.dsh/group/roush-cluster
-echo ${LOGIN}@$(ip_for_host roush-agent1) > ~/.dsh/group/roush-cluster
-echo ${LOGIN}@$(ip_for_host roush-agent2) > ~/.dsh/group/roush-cluster
+echo ${LOGIN}@$(ip_for_host roush-agent1) >> ~/.dsh/group/roush-cluster
+echo ${LOGIN}@$(ip_for_host roush-agent2) >> ~/.dsh/group/roush-cluster
 
 
 exit $retval
