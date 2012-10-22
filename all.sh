@@ -70,9 +70,12 @@ EOF
 
 # clients are all kicked and inserted into chef server.  Need to
 # set up the proper roles for the nodes and go.
-for d in "${cluster[@]}"; do
-    set_environment chef-server ${d} ${CHEF_ENV}
-done
+#for d in "${cluster[@]}"; do
+#    set_environment chef-server ${d} ${CHEF_ENV}
+#done
+
+# set the environment in one shot
+set_environment_all chef-server ${CHEF_ENV}
 
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" mysql <<EOF

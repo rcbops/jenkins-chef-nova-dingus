@@ -463,6 +463,19 @@ function set_environment() {
 #    knife node show ${chef_node_name} -c ${knife}
 }
 
+function set_environment_all() {
+    # $1 - chef server
+    # $2 - environment name
+    local server=$1
+    local environment=$2
+
+    prepare_chef ${server}
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    echo "Setting nodes to environment ${environment}"
+    knife exec -E 'nodes.transform("chef_environment:_default") { |n| n.chef_environment("'${environment}'") }' -c ${knife}
+}
+
 function run_tests() {
     # $1 - exerstack/kong server
     # $2 - version/component
