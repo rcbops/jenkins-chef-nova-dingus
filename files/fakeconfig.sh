@@ -242,7 +242,8 @@ function install_chef_client() {
         /usr/bin/cgroups-mount  # ?
     fi
 
-    curl -skS http://s3.amazonaws.com/opscode-full-stack/install.sh | /bin/bash &
+    #curl -skS http://s3.amazonaws.com/opscode-full-stack/install.sh | /bin/bash &
+    curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
     wait $!
 }
 
