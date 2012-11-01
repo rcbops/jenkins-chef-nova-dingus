@@ -1,6 +1,7 @@
 #!/bin/bash
 
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
+PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
 source $(dirname $0)/chef-jenkins.sh
 source $(dirname $0)/files/cloudfiles-credentials
@@ -97,7 +98,22 @@ x_with_cluster "Installing glance" glance <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[nova-volume],role[collectd-client],role[collectd-server],role[graphite]"
+# setup the role list
+role_list = "role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
+case "$PACKAGE_COMPONENT" in
+essex-final) role_list+=",role[nova-volume]"
+             ;;
+folsom)      role_list+=",role[cinder-all]"
+             ;;
+*)           echo "WARNING!  UNKNOWN PACKAGE_COMPONENT ($PACKAGE_COMPONENT)"
+             exit 100
+             ;;
+esac
+role_list+=",role[collectd-client],role[collectd-server],role[graphite]"
+role_add chef-server api "$role_list"
+
+# Set the package_component environment variable
+knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; a['package_component']='${PACKAGE_COMPONENT}'; @e.override_attributes(a); @e.save" -c ${knife}
 
 x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
 chef-client -ldebug
@@ -124,7 +140,7 @@ collect_tasks
 
 retval=0
 
-if ( ! run_tests api essex-final nova glance keystone glance-swift ); then
+if ( ! run_tests api ${PACKAGE_COMPONENT} nova glance keystone glance-swift ); then
     echo "Tests failed."
     retval=1
 fi
