@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
+PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -9,6 +10,7 @@ init
 CHEF_ENV="bigcluster-${INSTANCE_IMAGE}"
 echo "using environment ${CHEF_ENV}"
 echo "Using INSTANCE_IMAGE ${INSTANCE_IMAGE}"
+echo "Building for ${PACKAGE_COMPONENT}
 
 rm -rf logs
 mkdir -p logs/run
