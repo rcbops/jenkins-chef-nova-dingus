@@ -1,7 +1,4 @@
 {
-    "default_attributes": {
-        "package_component": "essex-final"
-    },
     "cookbook_versions": {
     },
     "json_class": "Chef::Environment",
