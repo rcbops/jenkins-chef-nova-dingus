@@ -552,6 +552,7 @@ function knife_set_package_component() {
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
+    echo "setting package_component for ${environment} to ${value}"
     knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; a['package_component']='${value}'; @e.override_attributes(a); @e.save" -c ${knife}
 }
 
