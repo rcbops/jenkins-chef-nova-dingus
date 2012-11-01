@@ -115,7 +115,7 @@ role_list+=",role[collectd-client],role[collectd-server],role[graphite]"
 role_add chef-server api "$role_list"
 
 # Set the package_component environment variable
-knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; a['package_component']='${PACKAGE_COMPONENT}'; @e.override_attributes(a); @e.save" -c ${knife}
+knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
 x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
 chef-client -ldebug

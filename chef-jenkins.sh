@@ -541,6 +541,20 @@ function set_node_attribute() {
     knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new.json
 }
 
+function knife_set_package_component() {
+    # $1 chef server
+    # $2 environment name
+    # $3 value
+
+    local server=$1
+    local environment=$2
+    local value=$3
+
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; a['package_component']='${value}'; @e.override_attributes(a); @e.save" -c ${knife}
+}
+
 function set_environment_attribute() {
     # $1 chef server
     # $2 environment name
