@@ -51,6 +51,9 @@ setup_private_network eth0 br99 api ${cluster[@]}
 # let's set up the environment.
 
 create_chef_environment chef-server ${CHEF_ENV}
+# Set the package_component environment variable
+knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
+
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # set environment to use swift/cloudfiles for image storage
@@ -112,9 +115,6 @@ folsom)      role_list+=",role[cinder-all]"
 esac
 role_list+=",role[collectd-client],role[collectd-server],role[graphite]"
 role_add chef-server api "$role_list"
-
-# Set the package_component environment variable
-knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
 x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
 chef-client -ldebug
