@@ -554,7 +554,7 @@ function knife_set_package_component() {
 
     echo "setting package_component for ${environment} to ${value}"
     knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; a['package_component']='${value}'; @e.override_attributes(a); @e.save" -c ${knife}
-    knife show environment ${environment} -Fj -c ${knife}
+    knife environment show ${environment} -Fj -c ${knife}
 }
 
 function set_environment_attribute() {
