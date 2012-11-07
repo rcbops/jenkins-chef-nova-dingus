@@ -73,14 +73,16 @@ template_client $(ip_for_host chef-server)
 chef-client -ldebug
 EOF
 
-# clients are all kicked and inserted into chef server.  Need to
-# set up the proper roles for the nodes and go.
-#for d in "${cluster[@]}"; do
-#    set_environment chef-server ${d} ${CHEF_ENV}
-#done
-
 # set the environment in one shot
 set_environment_all chef-server ${CHEF_ENV}
+
+other_array=(${cluster[@]#mysql})
+for d in "${other_array[@]}"; do
+    x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
+prep_chef_client
+EOF
+    background_task "fc_do"
+done
 
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" mysql <<EOF

@@ -65,14 +65,6 @@ a['glance']['api']['swift_store_address']='${ST_AUTH}';
 a['glance']['api']['swift_store_region']='DFW'; 
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
-
 x_with_cluster "Registering chef-client" ${cluster[@]} <<EOF
 update_package_provider
 flush_iptables
