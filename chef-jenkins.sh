@@ -126,6 +126,7 @@ function terminate_server() {
     #1 - server name
     local name=${JOBID}-$1
 
+    echo "terminating instance ${name}"
     if nova show ${name}; then
         nova delete ${name}
     fi
