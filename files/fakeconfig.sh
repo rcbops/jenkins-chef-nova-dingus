@@ -24,6 +24,10 @@ function run_twice() {
     fi
 }
 
+function prep_chef_client() {
+    chef-client -o 'role[base]' -l debug
+}
+
 function add_repo_key() {
     # $1 - repo
     #

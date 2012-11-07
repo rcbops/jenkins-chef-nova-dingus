@@ -57,11 +57,20 @@ knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # set environment to use swift/cloudfiles for image storage
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
+knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; \
+a['glance']['api']['default_store']='swift'; 
+a['glance']['api']['swift_store_user']='${ST_USER}'; 
+a['glance']['api']['swift_store_key']='${ST_KEY}'; 
+a['glance']['api']['swift_store_version']='${ST_AUTH_VERSION}'; 
+a['glance']['api']['swift_store_address']='${ST_AUTH}'; 
+a['glance']['api']['swift_store_region']='DFW'; 
+@e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/${server}/knife.rb
+
+#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
+#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
+#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
+#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
+#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
 
 # set kong swift_store_endpoint
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
@@ -77,23 +86,19 @@ template_client $(ip_for_host chef-server)
 chef-client -ldebug
 EOF
 
-# clients are all kicked and inserted into chef server.  Need to
-# set up the proper roles for the nodes and go.
-#for d in "${cluster[@]}"; do
-#    set_environment chef-server ${d} ${CHEF_ENV} 
-#done
-
 # set the environment in one shot
 set_environment_all chef-server ${CHEF_ENV}
 
+for d in "${cluster[@]#mysql}"; do
+    x_with_server "prep chef with base role" ${d} <<EOF
+prep_chef_client
+EOF
+    background_task "fc_do"
+done
+
 role_add chef-server mysql "role[mysql-master]"
-#x_with_cluster "Installing mysql" mysql <<EOF
-x_with_cluster "Installing mysql and prepping the other nodes" ${cluster[@]} <<EOF
-if [[ ${HOSTNAME} = "${JOB_NAME}-mysql" ]]; then
-    chef-client -ldebug
-else
-    chef-client -o 'role[base]' -ldebug
-fi
+x_with_cluster "Installing mysql" mysql <<EOF
+chef-client -ldebug
 EOF
 
 role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
