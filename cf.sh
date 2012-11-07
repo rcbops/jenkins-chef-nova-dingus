@@ -86,7 +86,8 @@ EOF
 # set the environment in one shot
 set_environment_all chef-server ${CHEF_ENV}
 
-for d in "${cluster[@]#mysql}"; do
+other_array=(${cluster[@]#mysql})
+for d in "${other_array[@]}"; do
     x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
 prep_chef_client
 EOF
