@@ -76,8 +76,9 @@ EOF
 # set the environment in one shot
 set_environment_all chef-server ${CHEF_ENV}
 
-other_array=(${cluster[@]#mysql})
-for d in "${other_array[@]}"; do
+# nodes to prep with base and build-essentials.  
+prep_list=(keystone glance api horizon compute1 compute2)
+for d in "${prep_list[@]}"; do
     x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
 prep_chef_client
 EOF
