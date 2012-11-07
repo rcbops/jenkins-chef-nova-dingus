@@ -57,7 +57,7 @@ knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # set environment to use swift/cloudfiles for image storage
-knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; \
+knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
 a['glance']['image_upload']=false;
 a['glance']['api']['default_store']='swift'; 
 a['glance']['api']['swift_store_user']='${ST_USER}'; 
