@@ -67,7 +67,7 @@ set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/ap
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
 
 
-x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
+x_with_cluster "Registering chef-client" ${cluster[@]} <<EOF
 update_package_provider
 flush_iptables
 install_chef_client
@@ -87,8 +87,13 @@ EOF
 set_environment_all chef-server ${CHEF_ENV}
 
 role_add chef-server mysql "role[mysql-master]"
-x_with_cluster "Installing mysql" mysql <<EOF
-chef-client -ldebug
+#x_with_cluster "Installing mysql" mysql <<EOF
+x_with_cluster "Installing mysql and prepping the other nodes" ${cluster[@]} <<EOF
+if [[ ${HOSTNAME} = "${JOB_NAME}-mysql" ]]; then
+    chef-client -ldebug
+else
+    chef-client -o 'role[base]' -ldebug
+fi
 EOF
 
 role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
