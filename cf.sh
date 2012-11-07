@@ -54,8 +54,6 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
-
 # set environment to use swift/cloudfiles for image storage
 knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
 a['glance']['image_upload']=false;
@@ -67,15 +65,13 @@ a['glance']['api']['swift_store_address']='${ST_AUTH}';
 a['glance']['api']['swift_store_region']='DFW'; 
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
+#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
-
-# set kong swift_store_endpoint
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
-
 
 x_with_cluster "Registering chef-client" ${cluster[@]} <<EOF
 update_package_provider
@@ -91,7 +87,7 @@ EOF
 set_environment_all chef-server ${CHEF_ENV}
 
 for d in "${cluster[@]#mysql}"; do
-    x_with_server "prep chef with base role" ${d} <<EOF
+    x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
 prep_chef_client
 EOF
     background_task "fc_do"
