@@ -152,7 +152,7 @@ collect_tasks
 retval=0
 
 # setup test list
-declare -a testlist=(nova glance swift keystone glance-swift)
+declare -a testlist=(nova glance keystone glance-swift)
 if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
     testlist=("cinder" "${testlist[@]}")
 fi
