@@ -8,8 +8,10 @@ JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 # likely need overrides
 CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
-CHEF_FLAVOR=${CHEF_FLAVOR:-2}
+
+CHEF_FLAVOR=${CHEF_FLAVOR:-6}
 INSTANCE_FLAVOR=${INSTANCE_FLAVOR:-2}
+
 SOURCE_DIR=${SOURCE_DIR:-$(dirname $(readlink -f $0))}
 CREDENTIALS=${CREDENTIALS:-${SOURCE_DIR}/files/nova-credentials}
 PRIVKEY=${PRIVKEY:-${SOURCE_DIR}/files/id_jenkins}
