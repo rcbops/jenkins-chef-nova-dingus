@@ -51,7 +51,6 @@ setup_private_network eth0 br99 api ${cluster[@]}
 # let's set up the environment.
 
 create_chef_environment chef-server ${CHEF_ENV}
-
 # set environment to use swift/cloudfiles for image storage
 # also set package_component in same shot
 knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
@@ -88,8 +87,10 @@ EOF
 # set the environment in one shot
 set_environment_all chef-server ${CHEF_ENV}
 
-for d in "${cluster[@]#mysql}"; do
-    x_with_server "prep chef with base role" ${d} <<EOF
+# nodes to prep with base and build-essentials.
+prep_list=(keystone glance api horizon compute1 compute2)
+for d in "${prep_list[@]}"; do
+    x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
 prep_chef_client
 EOF
     background_task "fc_do"
