@@ -59,12 +59,12 @@ knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 # set environment to use swift/cloudfiles for image storage
 knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; \
 a['glance']['image_upload']=false;
-a['glance']['api']['default_store']='swift'; 
-a['glance']['api']['swift_store_user']='${ST_USER}'; 
-a['glance']['api']['swift_store_key']='${ST_KEY}'; 
-a['glance']['api']['swift_store_version']='${ST_AUTH_VERSION}'; 
-a['glance']['api']['swift_store_address']='${ST_AUTH}'; 
-a['glance']['api']['swift_store_region']='DFW'; 
+a['glance']['api']['default_store']='swift';
+a['glance']['api']['swift_store_user']='${ST_USER}';
+a['glance']['api']['swift_store_key']='${ST_KEY}';
+a['glance']['api']['swift_store_version']='${ST_AUTH_VERSION}';
+a['glance']['api']['swift_store_address']='${ST_AUTH}';
+a['glance']['api']['swift_store_region']='DFW';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
@@ -76,6 +76,15 @@ a['glance']['api']['swift_store_region']='DFW';
 # set kong swift_store_endpoint
 #set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
 
+# fix up api node with a cinder-volumes vg
+if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
+x_with_cluster "setting up cinder-volumes vg on api node for cinder" api <<EOF
+install_package lvm2
+umount /mnt
+pvcreate /dev/vdb
+vgcreate cinder-volumes /dev/vdb
+EOF
+fi
 
 x_with_cluster "Registering chef-client" ${cluster[@]} <<EOF
 update_package_provider
@@ -152,7 +161,14 @@ collect_tasks
 
 retval=0
 
-if ( ! run_tests api ${PACKAGE_COMPONENT} nova glance keystone glance-swift ); then
+# setup test list
+declare -a testlist=(nova glance swift keystone glance-swift)
+if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
+    testlist=("cinder" "${testlist[@]}")
+fi
+
+# run tests
+if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
     echo "Tests failed."
     retval=1
 fi
