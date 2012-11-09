@@ -51,13 +51,11 @@ setup_private_network eth0 br99 api ${cluster[@]}
 # let's set up the environment.
 
 create_chef_environment chef-server ${CHEF_ENV}
-# Set the package_component environment variable
-knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
-
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # set environment to use swift/cloudfiles for image storage
-knife exec -E "@e=Chef::Environment.load('${environment}'); a=@e.override_attributes; \
+# also set package_component in same shot
+knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
+a['package_component']='${PACKAGE_COMPONENT}';
 a['glance']['image_upload']=false;
 a['glance']['api']['default_store']='swift';
 a['glance']['api']['swift_store_user']='${ST_USER}';
@@ -66,15 +64,6 @@ a['glance']['api']['swift_store_auth_version']='${ST_AUTH_VERSION}';
 a['glance']['api']['swift_store_auth_address']='${ST_AUTH}';
 a['glance']['api']['swift_store_region']='DFW';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
-
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/default_store" "\"swift\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_user" "\"${ST_USER}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_key" "\"${ST_KEY}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_version" "\"${ST_AUTH_VERSION}\""
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/api/swift_store_address" "\"${ST_AUTH}\""
-
-# set kong swift_store_endpoint
-#set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/kong/swift_store_region" "\"DFW\""
 
 # fix up api node with a cinder-volumes vg
 if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
