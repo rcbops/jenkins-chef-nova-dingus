@@ -51,11 +51,10 @@ setup_private_network eth0 br99 api ${cluster[@]}
 # let's set up the environment.
 
 create_chef_environment chef-server ${CHEF_ENV}
-# Set the package_component environment variable
-knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
-
 # set environment to use swift/cloudfiles for image storage
+# also set package_component in same shot
 knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
+a['package_component']='${PACKAGE_COMPONENT}';
 a['glance']['image_upload']=false;
 a['glance']['api']['default_store']='swift';
 a['glance']['api']['swift_store_user']='${ST_USER}';
