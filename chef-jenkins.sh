@@ -496,6 +496,7 @@ function run_tests() {
         [glance]="glance.sh"
         [keystone]="keystone.sh"
         [swift]="swift.sh"
+        [cinder]="cinder-cli.sh"
     )
 
     kongtests=(

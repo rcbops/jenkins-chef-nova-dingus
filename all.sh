@@ -63,6 +63,16 @@ grep -v "/mnt" /etc/fstab > /tmp/newfstab
 cp /tmp/newfstab /etc/fstab
 EOF
 
+# fix up api node with a cinder-volumes vg
+if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
+x_with_cluster "setting up cinder-volumes vg on api node for cinder" api <<EOF
+install_package lvm2
+umount /mnt
+pvcreate /dev/vdb
+vgcreate cinder-volumes /dev/vdb
+EOF
+fi
+
 x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
 update_package_provider
 flush_iptables
@@ -163,7 +173,14 @@ collect_tasks
 
 retval=0
 
-if ( ! run_tests api ${PACKAGE_COMPONENT} nova glance swift keystone glance-swift ); then
+# setup test list
+declare -a testlist=(nova glance swift keystone glance-swift)
+if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
+    testlist=("cinder" "${testlist[@]}")
+fi
+
+# run tests
+if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
     echo "Tests failed."
     retval=1
 fi
