@@ -62,8 +62,8 @@ a['glance']['image_upload']=false;
 a['glance']['api']['default_store']='swift';
 a['glance']['api']['swift_store_user']='${ST_USER}';
 a['glance']['api']['swift_store_key']='${ST_KEY}';
-a['glance']['api']['swift_store_version']='${ST_AUTH_VERSION}';
-a['glance']['api']['swift_store_address']='${ST_AUTH}';
+a['glance']['api']['swift_store_auth_version']='${ST_AUTH_VERSION}';
+a['glance']['api']['swift_store_auth_address']='${ST_AUTH}';
 a['glance']['api']['swift_store_region']='DFW';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
