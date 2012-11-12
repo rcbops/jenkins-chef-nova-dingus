@@ -510,6 +510,7 @@ function run_tests() {
         [nova]="--nova"
         [swift]="--swift"
         [glance-swift]="--glance-swift"
+        [cinder]="--cinder"
     )
 
     local exerstack_tests=""
