@@ -4,7 +4,7 @@
 # particularly if we're running under jenkins
 JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_NUMBER:-${USER}-${RANDOM}}
 JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
-JENKINS_PROXY=${JENKINS-PROXY:-http://10.127.52.2:3128}
+JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
 
 # likely need overrides
 CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
