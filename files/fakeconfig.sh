@@ -10,7 +10,11 @@ GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks}
 COOKBOOK_OVERRIDE=""
 
 if [ -e /etc/redhat-release ]; then
-    PLATFORM=redhat
+    if [[ $(grep -c "CentOS" /etc/redhat-release) ]]; then
+        PLATFORM=centos
+    else
+        PLATFORM=redhat
+    fi
 else
     PLATFORM=debian
 fi
@@ -91,7 +95,23 @@ EOF
 
 function update_package_provider() {
     if [ $PLATFORM = "debian" ]; then
+        sed -i 's/archive.ubuntu.com/10.127.52.2:3142\/apt-cacher\/archive.ubuntu.com/g' /etc/apt/sources.list
+        sed -i 's/security.ubuntu.com/10.127.52.2:3142\/apt-cacher\/security.ubuntu.com/g' /etc/apt/sources.list
         DEBIAN_FRONTEND=noninteractive apt-get update
+    elif [ $PLATFORM = "centos" ]; then
+        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
+        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
+        sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
+
+        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel.repo
+        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo
+        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel.repo
+
+        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel-testing.repo
+        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
+        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
+
+        echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
     fi
 }
 
@@ -145,6 +165,7 @@ EOF
     chmod 644 /usr/share/chef-server-api/public/chefadmin.pem
     chmod 644 /usr/share/chef-server-api/public/validation.pem
 }
+
 
 function checkout_cookbooks() {
     declare -a overrides
@@ -231,6 +252,7 @@ function upload_roles() {
 function install_chef_client() {
     local extra_packages
 
+    export http_proxy=${JENKINS_PROXY}
     case $PLATFORM in
         debian|ubuntu)
             extra_packages="wget curl build-essential automake cgroup-lite"
@@ -248,6 +270,7 @@ function install_chef_client() {
 
     #curl -skS http://s3.amazonaws.com/opscode-full-stack/install.sh | /bin/bash &
     curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
+    unset http_proxy
     wait $!
 }
 
@@ -349,7 +372,7 @@ function fix_for_tests() {
 
     if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
         install_package "swift"
-    elif [ $PLATFORM = "redhat" ]; then
+    elif [ $PLATFORM = "redhat" ] || [ $PLATFORM = "centos" ]; then
         install_package "openstack-swift"
     fi
 

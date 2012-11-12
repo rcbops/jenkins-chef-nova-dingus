@@ -43,6 +43,7 @@ wait_for_cluster_ssh ${cluster[@]}
 echo "Cluster booted... setting up vpn thing"
 x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
 wait_for_rhn
+update_package_provider
 install_package bridge-utils
 EOF
 setup_private_network eth0 br99 api ${cluster[@]}
@@ -75,7 +76,6 @@ EOF
 fi
 
 x_with_cluster "Registering chef-client" ${cluster[@]} <<EOF
-update_package_provider
 flush_iptables
 install_chef_client
 fetch_validation_pem $(ip_for_host chef-server)
