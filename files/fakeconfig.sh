@@ -101,15 +101,15 @@ function update_package_provider() {
     elif [ $PLATFORM = "centos" ]; then
         sed -i '/^mirrorlist.*/d' CentOS-Base.repo
         sed -i 's/^#baseurl/baseurl/g' CentOS-Base.repo
-        sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' CentOS-Base.repo
+        sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
 
         sed -i '/^mirrorlist.*/d' epel.repo
         sed -i 's/^#baseurl/baseurl/g' epel.repo
-        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' epel.repo
+        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel.repo
 
         sed -i '/^mirrorlist.*/d' epel-testing.repo
         sed -i 's/^#baseurl/baseurl/g' epel-testing.repo
-        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' epel-testing.repo
+        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
 
         echo "proxy=${JENKINS_PROXY} >> /etc/yum.conf"
     fi
