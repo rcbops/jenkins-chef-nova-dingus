@@ -95,24 +95,19 @@ EOF
 
 function update_package_provider() {
     if [ $PLATFORM = "debian" ]; then
-        #sed -i 's/archive.ubuntu.com/10.127.52.2:3142\/apt-cacher\/archive.ubuntu.com/g' /etc/apt/sources.list
-        #sed -i 's/security.ubuntu.com/10.127.52.2:3142\/apt-cacher\/security.ubuntu.com/g' /etc/apt/sources.list
-        echo "Acquire { Retries \"5\"; HTTP { Proxy \"${JENKINS_PROXY}\"; }; };" >> /etc/apt/apt.conf
+        #echo "Acquire { Retries \"5\"; HTTP { Proxy \"${JENKINS_PROXY}\"; }; };" >> /etc/apt/apt.conf
         DEBIAN_FRONTEND=noninteractive apt-get update
     elif [ $PLATFORM = "centos" ]; then
-        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
-        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
-        #sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
+        #sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
+        #sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
 
-        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel.repo
-        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo
-        #sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel.repo
+        #sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel.repo
+        #sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo
 
-        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel-testing.repo
-        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
-        #sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
+        #sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel-testing.repo
+        #sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
 
-        echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
+        #echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
     fi
 }
 
