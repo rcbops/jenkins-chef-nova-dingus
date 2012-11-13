@@ -27,12 +27,12 @@ wait_for_ssh $(ip_for_host chef-server)
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 update_package_provider
 flush_iptables
-install_package git-core
+run_twice install_package git-core
 rabbitmq_fixup
 chef_fixup
-checkout_cookbooks
-upload_cookbooks
-upload_roles
+run_twice checkout_cookbooks
+run_twice upload_cookbooks
+run_twice upload_roles
 EOF
 background_task "fc_do"
 
@@ -43,7 +43,7 @@ echo "Cluster booted... setting up vpn thing"
 x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
 wait_for_rhn
 update_package_provider
-install_package bridge-utils
+run_twice install_package bridge-utils
 EOF
 setup_private_network eth0 br99 api ${cluster[@]}
 
