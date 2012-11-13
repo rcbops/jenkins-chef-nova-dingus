@@ -85,7 +85,7 @@ chef-client -ldebug
 EOF
 
 # set the environment in one shot
-set_environment_all chef-server ${CHEF_ENV}
+#set_environment_all chef-server ${CHEF_ENV}
 
 # nodes to prep with base and build-essentials.
 prep_list=(keystone glance api horizon compute1 compute2)

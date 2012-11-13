@@ -351,6 +351,7 @@ function template_client() {
     local ip=$1
 
     sed /etc/chef/client-template.rb -s -e s/@IP@/${ip}/ > /etc/chef/client.rb
+    echo "environment '${CHEF_ENV}'" >> /etc/chef/client.rb
 }
 
 function flush_iptables() {
