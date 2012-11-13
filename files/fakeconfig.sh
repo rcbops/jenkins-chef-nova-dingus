@@ -98,6 +98,7 @@ function update_package_provider() {
         #echo "Acquire { Retries \"5\"; HTTP { Proxy \"${JENKINS_PROXY}\"; }; };" >> /etc/apt/apt.conf
         DEBIAN_FRONTEND=noninteractive apt-get update
     elif [ $PLATFORM = "centos" ]; then
+        echo "skipping update_package_provider on CentOS"
         #sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
         #sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
 
