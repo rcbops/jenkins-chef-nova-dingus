@@ -252,7 +252,6 @@ function upload_roles() {
 function install_chef_client() {
     local extra_packages
 
-    export http_proxy=${JENKINS_PROXY}
     case $PLATFORM in
         debian|ubuntu)
             extra_packages="wget curl build-essential automake cgroup-lite"
@@ -268,6 +267,7 @@ function install_chef_client() {
         /usr/bin/cgroups-mount  # ?
     fi
 
+    export http_proxy=${JENKINS_PROXY}
     #curl -skS http://s3.amazonaws.com/opscode-full-stack/install.sh | /bin/bash &
     curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
     unset http_proxy
