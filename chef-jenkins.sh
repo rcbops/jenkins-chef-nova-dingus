@@ -141,7 +141,7 @@ function terminate_server() {
         nova delete ${name}
     fi
 
-    timeout ${SPINDOWN_TIMEOUT} sh -c "while nova show ${name} > /dev/null; do sleep 2; done"
+    timeout ${SPINDOWN_TIMEOUT} sh -c "while nova show ${name} > /dev/null; do sleep 5; done"
 }
 
 # given an image that's either a UUID or a name, find the
