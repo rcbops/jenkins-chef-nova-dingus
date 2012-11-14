@@ -109,7 +109,7 @@ function update_package_provider() {
         sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
         sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
-        yum -y upgrade
+        yum clean all
     fi
 }
 
