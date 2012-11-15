@@ -523,6 +523,11 @@ function run_tests() {
         kong_tests+="${kongtests[${d}]:-} "
     done
 
+    if [[ ! $INSTANCE_IMAGE = "jenkins-precise" ]]; then
+        echo "Sleep for 1 Shep to let CentOS catch up"
+        sleep 30s
+    fi
+
     x_with_server "running tests" ${server} <<-EOF
         cd /opt/exerstack
         ONESHOT=1 ./exercise.sh ${version} ${exerstack_tests}
