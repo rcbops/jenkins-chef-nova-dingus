@@ -165,7 +165,7 @@ function translate_image() {
 
 function boot_and_wait_with_wait() {
     #sleep for a random amount of time between 0 and 10 seconds.  then call boot_and_wait
-    RAND=$[ ( $RANDOM % 10 ) ]
+    RAND=$[ ( $RANDOM % 60 ) ]
     echo "Waiting for ${RAND} seconds before booting instance"
     sleep $RAND
     boot_and_wait $@
