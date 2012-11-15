@@ -163,14 +163,6 @@ function translate_image() {
     _RET=${candidates}
 }
 
-function boot_and_wait_with_wait() {
-    #sleep for a random amount of time between 0 and 10 seconds.  then call boot_and_wait
-    RAND=$[ ( $RANDOM % 10 ) ]
-    echo "Waiting for ${RAND} seconds before booting instance"
-    sleep $RAND
-    boot_and_wait $@
-}
-
 function boot_and_wait() {
     # $1 - name
     # $2 - image
@@ -303,7 +295,7 @@ function boot_cluster() {
         local image=${hostinfo[1]}
         local flavor=${hostinfo[2]}
 
-        background_task "boot_and_wait_with_wait \"${name}\" \"${image}\" \"${flavor}\""
+        background_task "boot_and_wait \"${name}\" \"${image}\" \"${flavor}\""
     done
 
     collect_tasks
