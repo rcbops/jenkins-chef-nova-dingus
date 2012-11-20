@@ -171,10 +171,11 @@ if [ -e /etc/nova ]; then chmod -R 755 /etc/nova; fi
 if [ -e /etc/keystone ]; then chmod -R 755 /etc/keystone; fi
 if [ -e /etc/glance ]; then chmod -R 755 /etc/glance; fi
 if [ -e /etc/cinder ]; then chmod -R 755 /etc/cinder; fi
+if [ -e /etc/swift ]; then chmod -R 755 /etc/swift; fi
 EOF
 
 cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${cluster[@]}
-cluster_fetch_file "/etc/{nova,glance,keystone,cinder}/*" ./logs/config ${cluster[@]}
+cluster_fetch_file "/etc/{nova,glance,keystone,cinder,swift}/*" ./logs/config ${cluster[@]}
 
 if [ $retval -eq 0 ]; then
     if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
