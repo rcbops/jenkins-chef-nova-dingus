@@ -179,7 +179,7 @@ cluster_fetch_file "/etc/{nova,glance,keystone,cinder,swift}/*" ./logs/config ${
 
 if [ $retval -eq 0 ]; then
     if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
-        github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO (CloudFiles)\n * ${BUILD_URL}consoleFull : SUCCESS"
+        github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova CloudFiles (${INSTANCE_IMAGE})\n * ${BUILD_URL}consoleFull : SUCCESS"
     else
         echo "skipping building comment"
     fi
