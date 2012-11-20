@@ -7,7 +7,7 @@ source $(dirname $0)/chef-jenkins.sh
 
 init
 
-CHEF_ENV="bigcluster-${INSTANCE_IMAGE}"
+CHEF_ENV="bigcluster"
 echo "using environment ${CHEF_ENV}"
 echo "Using INSTANCE_IMAGE ${INSTANCE_IMAGE}"
 echo "Building for ${PACKAGE_COMPONENT}"
@@ -189,9 +189,14 @@ x_with_cluster "Fixing log perms" keystone glance api horizon compute1 compute2 
 if [ -e /var/log/nova ]; then chmod 755 /var/log/nova; fi
 if [ -e /var/log/keystone ]; then chmod 755 /var/log/keystone; fi
 if [ -e /var/log/apache2 ]; then chmod 755 /var/log/apache2; fi
+if [ -e /etc/nova ]; then chmod -R 755 /etc/nova; fi
+if [ -e /etc/keystone ]; then chmod -R 755 /etc/keystone; fi
+if [ -e /etc/glance ]; then chmod -R 755 /etc/glance; fi
+if [ -e /etc/cinder ]; then chmod -R 755 /etc/cinder; fi
 EOF
 
 cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${cluster[@]}
+cluster_fetch_file "/etc/{nova,glance,keystone,cinder}/*" ./logs/config ${cluster[@]}
 
 if [ $retval -eq 0 ]; then
     if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
