@@ -25,7 +25,7 @@
         "nova": {
             "apply_patches": true,
             "libvirt": {
-                "virt_type": "qemu"
+                "virt_type": "kvm"
             },
             "networks": [
                 {
