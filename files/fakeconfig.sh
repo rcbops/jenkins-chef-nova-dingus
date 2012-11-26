@@ -126,14 +126,10 @@ function rabbitmq_fixup() {
 
     # sometimes rabbit gets mad about hostnames changing
     # when booting from a snapshotted instance...
-    if ! /etc/init.d/rabbitmq-server restart; then
-        local pid=$(ps auxw | grep "/var/lib/rabbi[t]" | awk '{ print $2 }')
-        if [ "${pid:-}" != "" ]; then
-            kill $pid
-            /etc/init.d/rabbitmq-server start
-            sleep 5
-        fi
-    fi
+    /etc/init.d/rabbitmq-server stop || :
+    pkill beam.smp || :
+    /etc/init.d/rabbitmq-server start
+    sleep 5
 
     if (! rabbitmqctl list_vhosts | grep -q chef ); then
         run_twice rabbitmqctl add_vhost /chef
