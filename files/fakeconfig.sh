@@ -98,7 +98,8 @@ function update_package_provider() {
         echo "Acquire { Retries \"5\"; HTTP { Proxy \"${JENKINS_PROXY}\"; }; };" >> /etc/apt/apt.conf
         DEBIAN_FRONTEND=noninteractive apt-get update
     elif [ $PLATFORM = "centos" ]; then
-        echo "skipping update_package_provider on CentOS"
+        # whack the cron jobs so they don't start on system boot
+        chmod 000 /etc/cron.{d,daily,monthly,hourly,monthly}/*
         sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
         sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
         sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
