@@ -531,7 +531,7 @@ function run_tests() {
 
     x_with_server "running tests" ${server} <<-EOF
         cd /opt/exerstack
-        ONESHOT=1 ./exercise.sh ${version} ${exerstack_tests}
+        ./exercise.sh ${version} ${exerstack_tests}
 
         cd /opt/kong
         ./run_tests.sh --version ${version} ${kong_tests}
