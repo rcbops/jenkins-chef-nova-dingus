@@ -198,7 +198,7 @@ function boot_and_wait() {
         LOGIN="root"
     fi
 
-    nova boot --poll --flavor=${flavor} --image=${image} --availability-zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1
+    nova boot --poll --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1
 
     local count=0
 
