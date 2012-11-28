@@ -39,9 +39,9 @@ TYPEMAP[storage2]=${INSTANCE_IMAGE}:${EPHEMERAL_FLAVOR}
 TYPEMAP[storage3]=${INSTANCE_IMAGE}:${EPHEMERAL_FLAVOR}
 
 # sensible defaults
-SPINDOWN_TIMEOUT=${SPINDOWN_TIMEOUT:-60}
-NETWORK_SPINUP_TIMEOUT=${NETWORK_SPINUP_TIMEOUT:-30}
-SPINUP_TIMEOUT=${SPINUP_TIMEOUT:-60}
+SPINDOWN_TIMEOUT=${SPINDOWN_TIMEOUT:-120}
+NETWORK_SPINUP_TIMEOUT=${NETWORK_SPINUP_TIMEOUT:-300}
+SPINUP_TIMEOUT=${SPINUP_TIMEOUT:-300}
 ACCESS_NETWORK=${ACCESS_NETWORK:-public}
 SSH_TIMEOUT=${SSH_TIMEOUT:-240}
 
@@ -229,11 +229,11 @@ function boot_and_wait() {
 EOF
 
 
-    # count=0
-    # while [ "ACTIVE" != "$(nova show ${name} | grep status | awk '{print $4}')" ] && (( count < $(( SPINUP_TIMEOUT / 10)) )); do
-    #     sleep 10
-    #     count=$((count + 1))
-    # done
+    count=0
+    while [ "ACTIVE" != "$(nova show ${name} | grep status | awk '{print $4}')" ] && (( count < $(( SPINUP_TIMEOUT / 10)) )); do
+        sleep 10
+        count=$((count + 1))
+    done
 
     # nova show ${name}
 
