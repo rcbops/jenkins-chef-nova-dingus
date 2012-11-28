@@ -199,7 +199,9 @@ function boot_and_wait() {
         LOGIN="root"
     fi
 
-    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1
+    # omfg this is so full of fail.  folsom api likes to return an epic 143 error someplace near here and
+    # it is making me sad.
+    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1 || :
     # sleep for 30 seconds after booting the instance
     sleep 30s
 
