@@ -172,7 +172,6 @@ function boot_and_wait() {
     local ip=""
     local extra_flags=""
     local friendly_name=$1
-    local result
 
     get_likely_flavors ${friendly_name}
 
@@ -210,7 +209,7 @@ function boot_and_wait() {
     while [ "$ip" = "" ] && (( count < ${NETWORK_SPINUP_TIMEOUT:-60} )); do
         sleep 2
 
-        ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | cut -d'|' -f3 | tr -d ' ' | tr , '\n' | egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+        ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | cut -d'|' -f3 | tr -d ' ' | tr , '\n' | egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || :)
 
         if [ "$ip" = "|" ]; then
             ip=""
