@@ -172,6 +172,7 @@ function boot_and_wait() {
     local ip=""
     local extra_flags=""
     local friendly_name=$1
+    local result
 
     get_likely_flavors ${friendly_name}
 
@@ -198,7 +199,9 @@ function boot_and_wait() {
         LOGIN="root"
     fi
 
-    nova boot --poll --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1
+    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1
+    # sleep for 30 seconds after booting the instance
+    sleep 30s
 
     local count=0
 
