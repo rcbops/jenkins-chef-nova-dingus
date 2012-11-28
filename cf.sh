@@ -123,7 +123,12 @@ folsom)      role_list+=",role[cinder-all]"
              exit 100
              ;;
 esac
-role_list+=",role[collectd-client],role[collectd-server],role[graphite]"
+
+# skip collectd and graphite on rhel based systems for now.  It is just broke
+if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
+    role_list+=",role[collectd-client],role[collectd-server],role[graphite]"
+fi
+
 role_add chef-server api "$role_list"
 
 x_with_cluster "Installing nova infra/API" ${cluster[@]} <<EOF
