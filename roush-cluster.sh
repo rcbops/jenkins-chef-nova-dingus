@@ -61,11 +61,50 @@ base_dir = /usr/share/roush-agent
 plugin_dir =/usr/share/roush-agent/plugins
 input_handlers = /usr/share/roush-agent/plugins/input/task_input.py
 output_handlers = /usr/share/roush-agent/plugins/output
+log_config = /usr/share/roush-agent/log.cfg
 log_file = /var/log/roush-agent.log
 log_level = DEBUG
 #syslog_dev = /dev/log
 pidfile = /var/run/roush-agent.pid
 include_dir = /etc/roush-agent.d
+EOF
+
+cat > ${TMPDIR}/log.cfg <<EOF
+[loggers]
+keys=root
+
+[handlers]
+keys=file
+
+[formatters]
+keys=default
+
+[logger_root]
+level=INFO
+handlers=syslog
+
+[handler_stderr]
+class=StreamHandler
+level=NOTSET
+#formatter=default
+args=(sys.stderr,)
+
+[handler_syslog]
+class=logging.handlers.SysLogHandler
+level=NOTSET
+#formatter=default
+args=("/dev/log",)
+
+[handler_file]
+class=FileHandler
+level=NOTSET
+#formatter=default
+args=('/var/logroush-agent.log')
+
+[formatter_default]
+format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+class=logging.Formatter
+datefmt=%Y-%m-%d %H:%M:%S
 EOF
 
 cat > ${TMPDIR}/tasks.conf <<EOF
@@ -80,11 +119,12 @@ install_package roush-agent-input-task
 install_package roush-agent-output-adventurator
 install_package roush-agent-output-service
 install_package roush-agent-output-chef
-service roush-agent stop
+service roush-agent stop || /bin/true
 service roush stop
 copy_file ${TMPDIR}/roush.conf /usr/share/roush/roush.conf
 copy_file ${TMPDIR}/roush-agent.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
+copy_file ${TMPDIR}/log.cfg /usr/share/roush/log.cfg
 service roush start
 service roush-agent start
 EOF
@@ -94,9 +134,10 @@ x_with_cluster "setting up roush client" roush-agent1 roush-agent2 <<EOF
 install_package roush-agent
 install_package roush-agent-output-chef
 install_package roush-agent-input-task
-service roush-agent stop
+service roush-agent stop || /bin/true
 copy_file ${TMPDIR}/roush-agent.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
+copy_file ${TMPDIR}/log.cfg /usr/share/roush/log.cfg
 service roush-agent start
 EOF
 
