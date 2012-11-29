@@ -93,10 +93,9 @@ EOF
     fi
 }
 
-function update_package_provider() {
+function set_package_provider() {
     if [ $PLATFORM = "debian" ]; then
         echo "Acquire { Retries \"5\"; HTTP { Proxy \"${JENKINS_PROXY}\"; }; };" >> /etc/apt/apt.conf
-        DEBIAN_FRONTEND=noninteractive apt-get update
     elif [ $PLATFORM = "centos" ]; then
         # whack the cron jobs so they don't start on system boot
         chmod 000 /etc/cron.{d,daily,monthly,hourly,monthly}/*
@@ -111,6 +110,14 @@ function update_package_provider() {
         sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
         yum clean all
+    fi
+}
+
+function update_package_provider() {
+    if [ $PLATFORM = "debian" ]; then
+        DEBIAN_FRONTEND=noninteractive apt-get update
+    elif [ $PLATFORM = "centos" ]; then
+        echo "skipping on non-debian systems"
     fi
 }
 

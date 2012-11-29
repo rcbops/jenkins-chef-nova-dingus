@@ -26,6 +26,7 @@ boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
+set_package_provider
 update_package_provider
 flush_iptables
 run_twice install_package git-core
@@ -43,6 +44,7 @@ wait_for_cluster_ssh ${cluster[@]}
 echo "Cluster booted... setting up vpn thing"
 x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
 wait_for_rhn
+set_package_provider
 update_package_provider
 run_twice install_package bridge-utils
 EOF
