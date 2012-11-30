@@ -91,7 +91,8 @@ function cleanup() {
         collect_tasks
     fi
 
-    if [[ $PARENT_PID = $$ ]]; then
+    if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
+        echo "We are the parent - cleaning up after the kids"
         rm -rf ${TMPDIR}
     fi
     echo "Exiting with return value of ${exitval}"
