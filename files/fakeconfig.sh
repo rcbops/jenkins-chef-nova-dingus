@@ -39,7 +39,7 @@ function add_repo_key() {
     # if we need to at some point
     #
     if [ ${PLATFORM} = "debian" ]; then
-        apt-key adv --keyserver hkp://pgp.mit.edu --recv-keys 765C5E49F87CBDE0
+        apt-key adv --keyserver hkp://subkeys.pgp.net --recv-keys 765C5E49F87CBDE0
     else
         echo "add_repo_key not implemented for non-debian"
         exit 1
