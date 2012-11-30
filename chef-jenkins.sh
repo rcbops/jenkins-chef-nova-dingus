@@ -91,7 +91,6 @@ function cleanup() {
         collect_tasks
     fi
 
-    rm -rf ${TMPDIR}
     echo "Exiting with return value of ${exitval}"
     exit ${exitval}
 }
