@@ -26,10 +26,9 @@ echo "Cluster booted... configuring apt repos"
 
 # need to add build.mpl
 
-# mirrors.rackspace.com is broken right now
 cat > ${TMPDIR}/sources.list <<EOF
-deb http://mirror.anl.gov/pub/ubuntu/ precise main universe
-deb-src http://mirror.anl.gov/pub/ubuntu/ precise main universe
+deb http://mirror.rackspace.com/ubuntu/ precise main universe
+deb http://mirror.rackspace.com/ubuntu/ precise-updates main universe
 EOF
 
 x_with_cluster "setting apt repo" ${cluster[@]} <<EOF
@@ -113,32 +112,26 @@ endpoint=http://$(ip_for_host roush-server):8080
 EOF
 
 x_with_server "setting up roush server" roush-server <<EOF
-install_package roush-client
-install_package roush-simple
-install_package roush-agent-input-task
-install_package roush-agent-output-adventurator
-install_package roush-agent-output-service
-install_package roush-agent-output-chef
+install_package roush-client roush roush-simple roush-agent roush-agent-input-task
+install_package roush-agent-output-chef roush-agent-output-service roush-agent-output-adventurator
 service roush-agent stop || /bin/true
-service roush stop
+service roush stop || /bin/true
 copy_file ${TMPDIR}/roush.conf /usr/share/roush/roush.conf
 copy_file ${TMPDIR}/roush-agent.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
 copy_file ${TMPDIR}/log.cfg /usr/share/roush/log.cfg
-service roush start
-service roush-agent start
+service roush start || /bin/true
+service roush-agent start || /bin/true
 EOF
 background_task "fc_do"
 
 x_with_cluster "setting up roush client" roush-agent1 roush-agent2 <<EOF
-install_package roush-agent
-install_package roush-agent-output-chef
-install_package roush-agent-input-task
+install_package roush-agent roush-agent-output-chef roush-agent-input-task
 service roush-agent stop || /bin/true
 copy_file ${TMPDIR}/roush-agent.conf /etc/roush-agent.conf
 copy_file ${TMPDIR}/tasks.conf /etc/roush-agent.d/tasks.conf
 copy_file ${TMPDIR}/log.cfg /usr/share/roush/log.cfg
-service roush-agent start
+service roush-agent start || /bin/true
 EOF
 
 x_with_cluster "restarting agent" ${cluster[@]} <<EOF
