@@ -91,6 +91,9 @@ function cleanup() {
         collect_tasks
     fi
 
+    if [[ $PARENT_PID = $$ ]]; then
+        rm -rf ${TMPDIR}
+    fi
     echo "Exiting with return value of ${exitval}"
     exit ${exitval}
 }
