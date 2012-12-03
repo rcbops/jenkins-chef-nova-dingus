@@ -11,7 +11,7 @@
         },
         "nova": {
             "libvirt": {
-                "virt_type": "kvm"
+                "virt_type": "qemu"
             },
             "networks": [
                 {
