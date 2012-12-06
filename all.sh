@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+START_TIME=$(date +%s)
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
@@ -19,7 +20,7 @@ BASH_XTRACEFD=9
 set -x
 
 declare -a cluster
-cluster=(mysql keystone glance api horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
+cluster=(mysql keystone glance api api2 horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
 boot_and_wait chef-server
 wait_for_ssh $(ip_for_host chef-server)
@@ -88,8 +89,8 @@ EOF
 # set the environment in one shot
 #set_environment_all chef-server ${CHEF_ENV}
 
-# nodes to prep with base and build-essentials.  
-prep_list=(keystone glance api horizon compute1 compute2)
+# nodes to prep with base and build-essentials.
+prep_list=(keystone glance api api2 horizon compute1 compute2)
 for d in "${prep_list[@]}"; do
     x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
 prep_chef_client
@@ -120,12 +121,12 @@ x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
 chef-client -ldebug
 EOF
 
-# setup the role list
+# setup the role list for api
 role_list="role[base],role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
 case "$PACKAGE_COMPONENT" in
 essex-final) role_list+=",role[nova-volume]"
              ;;
-folsom)      role_list+=",role[cinder-all]"
+folsom)      role_list+=",role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume]"
              ;;
 *)           echo "WARNING!  UNKNOWN PACKAGE_COMPONENT ($PACKAGE_COMPONENT)"
              exit 100
@@ -143,14 +144,20 @@ x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
 chef-client -ldebug
 EOF
 
-role_add chef-server api "recipe[kong],recipe[exerstack]"
-role_add chef-server horizon "role[horizon-server]"
+# setup the role list for api2
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2]"
+if [ $PACKAGE_COMPONENT = "folsom" ] ;then
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2]"
+fi
+
+role_add chef-server api2 "$role_list"
+role_add chef-server horizon "role[horizon-server],role[haproxy]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
-x_with_cluster "proxy/api/horizon/computes" proxy api horizon compute{1..2} <<EOF
+x_with_cluster "proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
 chef-client -ldebug
 EOF
 
@@ -158,6 +165,8 @@ EOF
 x_with_cluster "Storage - Pass 2" storage{1..3} <<EOF
 chef-client -ldebug
 EOF
+
+role_add chef-server api "recipe[kong],recipe[exerstack]"
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
@@ -216,4 +225,6 @@ if [ $retval -eq 0 ]; then
     fi
 fi
 
+END_TIME=$(date +%s)
+echo "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
 exit $retval
