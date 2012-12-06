@@ -129,6 +129,14 @@ function install_package() {
     fi
 }
 
+function start_chef_services() {
+    /etc/init.d/chef-expander start
+    /etc/init.d/chef-server-webui start
+    /etc/init.d/chef-solr start
+    /etc/init.d/rabbitmq-server start
+    /etc/init.d/chef-server start
+}
+
 function rabbitmq_fixup() {
     local amqp_password=$(egrep "^amqp_pass" /etc/chef/server.rb | awk '{ print $2 }' | tr -d '"')
 

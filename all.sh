@@ -29,6 +29,7 @@ set_package_provider
 update_package_provider
 flush_iptables
 run_twice install_package git-core
+start_chef_services
 rabbitmq_fixup
 chef_fixup
 run_twice checkout_cookbooks
