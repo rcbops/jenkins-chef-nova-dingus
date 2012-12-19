@@ -83,7 +83,7 @@ install_chef_client
 fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
-chef-client -ldebug
+chef-client
 EOF
 
 # set the environment in one shot
@@ -100,12 +100,12 @@ done
 
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" mysql <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 role_add chef-server proxy "role[swift-management-server],role[swift-proxy-server]"
@@ -118,7 +118,7 @@ done
 role_add chef-server glance "role[glance-registry],role[glance-api]"
 
 x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # setup the role list for api
@@ -141,7 +141,7 @@ fi
 role_add chef-server api "$role_list"
 
 x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # setup the role list for api2
@@ -158,19 +158,19 @@ role_add chef-server compute2 "role[single-compute]"
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
 x_with_cluster "proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # Now run all the storage servers
 x_with_cluster "Storage - Pass 2" storage{1..3} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 role_add chef-server api "recipe[kong],recipe[exerstack]"
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # turn on glance uploads again
@@ -178,7 +178,7 @@ set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/im
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 x_with_server "fixerating" api <<EOF
