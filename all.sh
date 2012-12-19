@@ -176,6 +176,12 @@ EOF
 # turn on glance uploads again
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
+# this sucks - but we need to do it because we can't do glance image upload on two nodes at the time
+# time.
+x_with_cluster "Glance Image Upload" glance <<EOF
+chef-client
+EOF
+
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client
