@@ -23,6 +23,9 @@
             "apply_patches": true
         },
         "nova": {
+            "network": {
+                "multi_host": true
+            },
             "apply_patches": true,
             "libvirt": {
                 "virt_type": "qemu"
