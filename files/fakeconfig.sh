@@ -29,7 +29,7 @@ function run_twice() {
 }
 
 function prep_chef_client() {
-    chef-client -o 'role[base],recipe[build-essential]' -l debug
+    chef-client -o 'role[base],recipe[build-essential]'
 }
 
 function add_repo_key() {
