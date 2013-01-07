@@ -139,19 +139,19 @@ if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
 fi
 
 role_add chef-server api "$role_list"
+role_add chef-server horizon "role[horizon-server],role[haproxy]"
 
-x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
-chef-client
+x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
+chef-client -ldebug
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2]"
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 fi
 
 role_add chef-server api2 "$role_list"
-role_add chef-server horizon "role[horizon-server],role[haproxy]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
