@@ -620,6 +620,11 @@ function set_environment_attribute() {
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
     knife environment show ${environment} -fj -c ${knife} > ${TMPDIR}/env-${environment}.json
+    echo "**DEBUG**"
+    echo "KEY: ${key}"
+    echo "VALUE: ${value}"
+    echo "**DUMPING ENVIRONMENT FILE**"
+    cat ${TMPDIR}/env-${environment}.json
     ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/env-${environment}.json > ${TMPDIR}/env-${environment}-new.json
     echo "**DUMPING ENVIRONMENT FILE**"
     cat ${TMPDIR}/env-${environment}-new.json
