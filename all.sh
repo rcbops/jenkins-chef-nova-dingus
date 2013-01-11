@@ -153,7 +153,7 @@ if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
 fi
 
 role_add chef-server api "$role_list"
-role_add chef-server horizon "role[horizon-server],role[openstack-ha]"
+role_add chef-server horizon "role[horizon-server]"
 
 x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
 chef-client -ldebug
@@ -195,6 +195,9 @@ set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/im
 x_with_cluster "Glance Image Upload" glance <<EOF
 chef-client
 EOF
+
+# Turn on loadbalancing
+role_add chef-server horizon "role[openstack-ha]"
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
