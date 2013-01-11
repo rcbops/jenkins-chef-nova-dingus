@@ -182,6 +182,9 @@ EOF
 
 role_add chef-server api "recipe[kong],recipe[exerstack]"
 
+# Turn on loadbalancing
+role_add chef-server horizon "role[openstack-ha]"
+
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
 chef-client
@@ -195,9 +198,6 @@ set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/im
 x_with_cluster "Glance Image Upload" glance <<EOF
 chef-client
 EOF
-
-# Turn on loadbalancing
-role_add chef-server horizon "role[openstack-ha]"
 
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
