@@ -58,8 +58,8 @@ create_chef_environment chef-server ${CHEF_ENV}
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
 # Define vrrp ips
-api_vrrp_ip="10.127.55.1${EXECUTOR_NUMBER}"
-db_vrrp_ip="10.127.55.10${EXECUTOR_NUMBER}"
+api_vrrp_ip="\"10.127.55.1${EXECUTOR_NUMBER}\""
+db_vrrp_ip="\"10.127.55.10${EXECUTOR_NUMBER}\""
 
 # add the lb service vips to the environment
 set_environment_attribute chef_server ${CHEF_ENV} "/override_attributes/vips/nova-api" "${api_vrrp_ip}"
