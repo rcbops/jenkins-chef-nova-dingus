@@ -11,6 +11,7 @@
           "nova-api": "127.0.0.2",
           "nova-ec2-public": "127.0.0.2",
           "keystone-service-api": "127.0.0.2",
+          "keystone-admin-api": "127.0.0.2",
           "cinder-api": "127.0.0.2",
           "swift-proxy": "127.0.0.2"
         },
