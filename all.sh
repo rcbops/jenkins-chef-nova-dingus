@@ -66,6 +66,7 @@ knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attribute
 a['vips']['nova-api']='${api_vrrp_ip}';
 a['vips']['nova-ec2-public']='${api_vrrp_ip}';
 a['vips']['keystone-service-api']='${api_vrrp_ip}';
+a['vips']['keystone-admin-api']='${api_vrrp_ip}';
 a['vips']['cinder-api']='${api_vrrp_ip}';
 a['vips']['swift-proxy']='${api_vrrp_ip}';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
