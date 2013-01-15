@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 START_TIME=$(date +%s)
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
@@ -57,6 +58,21 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
+# Define vrrp ips
+api_vrrp_ip="10.127.55.1${EXECUTOR_NUMBER}"
+db_vrrp_ip="10.127.55.10${EXECUTOR_NUMBER}"
+
+# add the lb service vips to the environment
+knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
+a['vips']['nova-api']='${api_vrrp_ip}';
+a['vips']['nova-ec2-public']='${api_vrrp_ip}';
+a['vips']['keystone-service-api']='${api_vrrp_ip}';
+a['vips']['keystone-admin-api']='${api_vrrp_ip}';
+a['vips']['cinder-api']='${api_vrrp_ip}';
+a['vips']['swift-proxy']='${api_vrrp_ip}';
+@e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
+
+# Disable glance image_uploading
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # fix up the storage nodes
@@ -139,16 +155,16 @@ if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
 fi
 
 role_add chef-server api "$role_list"
-role_add chef-server horizon "role[horizon-server],role[haproxy]"
+role_add chef-server horizon "role[horizon-server]"
 
 x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
 chef-client -ldebug
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 fi
 
 role_add chef-server api2 "$role_list"
@@ -167,6 +183,9 @@ chef-client
 EOF
 
 role_add chef-server api "recipe[kong],recipe[exerstack]"
+
+# Turn on loadbalancing
+role_add chef-server horizon "role[openstack-ha]"
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
