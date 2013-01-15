@@ -138,7 +138,7 @@ chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
 case "$PACKAGE_COMPONENT" in
 essex-final) role_list+=",role[nova-volume]"
              ;;
