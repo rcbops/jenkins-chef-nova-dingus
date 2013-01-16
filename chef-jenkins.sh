@@ -320,21 +320,23 @@ function ip_for_host() {
 }
 
 function wait_for_ssh() {
-    # $1 - ip
-    local ip=$1
+    # $1 - hostname
+    local host_name=$1
+    local ip=$(ip_for_host ${host_name})
 
     timeout ${SSH_TIMEOUT} sh -c "while ! nc ${ip} 22 -w 1 -q 0 < /dev/null > /dev/null;do :; done"
     sleep 2
 }
 
 function wait_for_ssh_key() {
-    # $1 - ip
-    local ip=$1
+    # $1 - hostname
+    local host_name=$1
     local connected=0
     local count=0
     local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     local user=${LOGIN}
     local result
+    local ip=$(ip_for_host ${host_name})
 
     while [[ $connected = 0 ]] && (( count < SSH_TIMEOUT / 5 )); do
         timeout ${SSH_TIMEOUT} ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "/bin/true"
@@ -353,16 +355,25 @@ function wait_for_cluster_ssh() {
     for host in "$@"; do
         declare -a hostinfo
         hostinfo=(${host//:/ })
+        local host_name=${hostinfo[0]}
 
-        local name=${hostinfo[0]}
-        local ip=$(ip_for_host ${name})
-
-        background_task "wait_for_ssh ${ip}"
-        background_task "wait_for_ssh_key ${ip}"
+        background_task "wait_for_ssh ${host_name}"
     done
-
     collect_tasks
 }
+
+function wait_for_cluster_ssh_key() {
+    for host in "$@"; do
+        declare -a hostinfo
+        hostinfo=(${host//:/ })
+        local host_name=${hostinfo[0]}
+
+        background_task "wait_for_ssh_key ${host_name}"
+    done
+    collect_tasks
+}
+
+
 
 function background_task() {
     outfile=$(mktemp)
