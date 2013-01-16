@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 START_TIME=$(date +%s)
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
@@ -58,6 +59,21 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
+# Define vrrp ips
+api_vrrp_ip="10.127.55.1${EXECUTOR_NUMBER}"
+db_vrrp_ip="10.127.55.10${EXECUTOR_NUMBER}"
+
+# add the lb service vips to the environment
+knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
+a['vips']['nova-api']='${api_vrrp_ip}';
+a['vips']['nova-ec2-public']='${api_vrrp_ip}';
+a['vips']['keystone-service-api']='${api_vrrp_ip}';
+a['vips']['keystone-admin-api']='${api_vrrp_ip}';
+a['vips']['cinder-api']='${api_vrrp_ip}';
+a['vips']['swift-proxy']='${api_vrrp_ip}';
+@e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
+
+# Disable glance image_uploading
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
 # fix up the storage nodes
@@ -84,7 +100,7 @@ install_chef_client
 fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
-chef-client -ldebug
+chef-client
 EOF
 
 # set the environment in one shot
@@ -101,12 +117,12 @@ done
 
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" mysql <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 role_add chef-server proxy "role[swift-management-server],role[swift-proxy-server]"
@@ -119,11 +135,11 @@ done
 role_add chef-server glance "role[glance-registry],role[glance-api]"
 
 x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-network-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
 case "$PACKAGE_COMPONENT" in
 essex-final) role_list+=",role[nova-volume]"
              ;;
@@ -140,46 +156,55 @@ if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
 fi
 
 role_add chef-server api "$role_list"
+role_add chef-server horizon "role[horizon-server]"
 
-x_with_cluster "Installing API and storage nodes" api storage{1..3} <<EOF
+x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
 chef-client -ldebug
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2]"
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 fi
 
 role_add chef-server api2 "$role_list"
-role_add chef-server horizon "role[horizon-server],role[haproxy]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
 x_with_cluster "proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # Now run all the storage servers
 x_with_cluster "Storage - Pass 2" storage{1..3} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 role_add chef-server api "recipe[kong],recipe[exerstack]"
 
+# Turn on loadbalancing
+role_add chef-server horizon "role[openstack-ha]"
+
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # turn on glance uploads again
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
+# this sucks - but we need to do it because we can't do glance image upload on two nodes at the time
+# time.
+x_with_cluster "Glance Image Upload" glance <<EOF
+chef-client
+EOF
+
 # and again, just for good measure.
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 x_with_server "fixerating" api <<EOF

@@ -7,6 +7,14 @@
             "metric_provider": "collectd",
             "procmon_provider": "monit"
         },
+        "vips": {
+          "nova-api": "127.0.0.2",
+          "nova-ec2-public": "127.0.0.2",
+          "keystone-service-api": "127.0.0.2",
+          "keystone-admin-api": "127.0.0.2",
+          "cinder-api": "127.0.0.2",
+          "swift-proxy": "127.0.0.2"
+        },
         "swift": {
             "use_informant": false,
             "authkey": "3f281b71-ce89-4b27-a2ad-ad873d3f2760",
@@ -23,6 +31,9 @@
             "apply_patches": true
         },
         "nova": {
+            "network": {
+                "multi_host": true
+            },
             "apply_patches": true,
             "libvirt": {
                 "virt_type": "qemu"
