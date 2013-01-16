@@ -61,6 +61,7 @@ knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 # Define vrrp ips
 api_vrrp_ip="10.127.55.1${EXECUTOR_NUMBER}"
 db_vrrp_ip="10.127.55.10${EXECUTOR_NUMBER}"
+rabbitmq_vrrp_ip="10.127.55.20${EXECUTOR_NUMBER}"
 
 # add the lb service vips to the environment
 knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
@@ -70,6 +71,7 @@ a['vips']['keystone-service-api']='${api_vrrp_ip}';
 a['vips']['keystone-admin-api']='${api_vrrp_ip}';
 a['vips']['cinder-api']='${api_vrrp_ip}';
 a['vips']['swift-proxy']='${api_vrrp_ip}';
+a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
 # Disable glance image_uploading
@@ -138,7 +140,7 @@ chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-network-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[rabbitmq-server]"
 case "$PACKAGE_COMPONENT" in
 essex-final) role_list+=",role[nova-volume]"
              ;;
