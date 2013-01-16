@@ -24,13 +24,14 @@ declare -a cluster
 cluster=(mysql keystone glance api api2 horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
 boot_and_wait chef-server
-wait_for_ssh $(ip_for_host chef-server)
+wait_for_ssh chef-server
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 set_package_provider
 update_package_provider
 flush_iptables
 run_twice install_package git-core
+start_chef_services
 rabbitmq_fixup
 chef_fixup
 run_twice checkout_cookbooks
@@ -41,6 +42,7 @@ background_task "fc_do"
 
 boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
+wait_for_cluster_ssh_key ${cluster[@]}
 
 echo "Cluster booted... setting up vpn thing"
 x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF

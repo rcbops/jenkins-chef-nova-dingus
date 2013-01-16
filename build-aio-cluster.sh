@@ -24,7 +24,7 @@ declare -a cluster
 cluster=(mysql keystone glance api horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
 boot_and_wait chef-server
-wait_for_ssh $(ip_for_host chef-server)
+wait_for_ssh chef-server
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 set_package_provider

@@ -10,7 +10,7 @@ declare -a cluster
 cluster=(keystone proxy storage1 storage2 storage3)
 
 boot_and_wait chef-server
-wait_for_ssh $(ip_for_host chef-server)
+wait_for_ssh chef-server
 
 x_with_server "Uploading cookbooks" "chef-server" <<EOF
 update_package_provider

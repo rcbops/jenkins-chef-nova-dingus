@@ -20,6 +20,7 @@ BASH_XTRACEFD=9
 set -x
 
 boot_cluster ${cluster[@]}
+sleep 30s
 wait_for_cluster_ssh ${cluster[@]}
 
 echo "Cluster booted... configuring apt repos"
