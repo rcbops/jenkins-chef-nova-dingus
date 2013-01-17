@@ -79,6 +79,25 @@ a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
 # Disable glance image_uploading
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
 
+# add the clients to the chef server
+add_chef_clients chef-server ${cluster[@]}
+
+# nodes to prep with base and build-essentials.
+prep_list=(keystone glance api api2 horizon compute1 compute2)
+for d in "${prep_list[@]}"; do
+    role_add chef-server ${d} "role[base],recipe[build-essential]"
+done
+
+x_with_cluster "Installing chef-client" ${cluster[@]} <<EOF
+flush_iptables
+install_chef_client
+fetch_validation_pem $(ip_for_host chef-server)
+copy_file client-template.rb /etc/chef/client-template.rb
+template_client $(ip_for_host chef-server)
+chef-client
+EOF
+
+
 # fix up the storage nodes
 x_with_cluster "un-fscking ephemerals" storage1 storage2 storage3 <<EOF
 umount /mnt
@@ -97,33 +116,27 @@ vgcreate cinder-volumes /dev/vdb
 EOF
 fi
 
-x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
-flush_iptables
-install_chef_client
-fetch_validation_pem $(ip_for_host chef-server)
-copy_file client-template.rb /etc/chef/client-template.rb
-template_client $(ip_for_host chef-server)
-chef-client
-EOF
-
-# set the environment in one shot
-#set_environment_all chef-server ${CHEF_ENV}
-
-# nodes to prep with base and build-essentials.
-prep_list=(keystone glance api api2 horizon compute1 compute2)
-for d in "${prep_list[@]}"; do
-    x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
-prep_chef_client
-EOF
-    background_task "fc_do"
-done
-
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" mysql <<EOF
 chef-client
 EOF
 
-role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
+# install rabbit message bus early and everywhere it is needed.
+role_add chef-server "keystone" "role[rabbitmq-server]"
+role_add chef-server "api2" "role[rabbitmq-server]"
+
+# this needs to be two separate runs because there exists a race condition where
+# running this at the same time on two nodes generates different erlang cookies
+# and that will break clustering in the next release.  Run it one at a time and
+# we won't have any problems.  Darren - fix this!
+x_with_cluster "Installing rabbit message bus master on keystone" keystone <<EOF
+chef-client
+EOF
+x_with_cluster "Installing rabbit message bus secondary on api2" api2 <<EOF
+chef-client
+EOF
+
+role_add chef-server keystone "role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
 chef-client
 EOF
@@ -142,7 +155,7 @@ chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy],role[rabbitmq-server]"
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
 case "$PACKAGE_COMPONENT" in
 essex-final) role_list+=",role[nova-volume]"
              ;;
@@ -162,7 +175,7 @@ role_add chef-server api "$role_list"
 role_add chef-server horizon "role[horizon-server]"
 
 x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # setup the role list for api2
@@ -199,8 +212,7 @@ EOF
 # turn on glance uploads again
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
-# this sucks - but we need to do it because we can't do glance image upload on two nodes at the time
-# time.
+# this sucks - but we need to do it because we can't do glance image upload on two nodes at the same time
 x_with_cluster "Glance Image Upload" glance <<EOF
 chef-client
 EOF

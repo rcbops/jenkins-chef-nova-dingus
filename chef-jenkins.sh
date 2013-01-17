@@ -319,6 +319,26 @@ function ip_for_host() {
     echo $NODE_IP
 }
 
+function hostname_for_host() {
+    # $1 - host
+    [ -e ${TMPDIR}/nodes/${JOBID}-${1} ]
+
+    source ${TMPDIR}/nodes/${JOBID}-${1}
+    echo $NODE_NAME
+}
+
+function add_chef_clients() {
+    local server=$1
+    shift
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    for host in "$@"; do
+        local hostname=$(hostname_for_host ${host})
+        echo "Creating entry on ${server} for ${hostname}"
+        EDITOR=/bin/true knife node create ${hostname}.novalocal -c ${knife}
+    done
+}
+
 function wait_for_ssh() {
     # $1 - hostname
     local host_name=$1
