@@ -111,6 +111,7 @@ function set_package_provider() {
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
         yum clean all
     fi
+    echo "proxy=${JENKINS_PROXY}" >> /root/.curlrc
 }
 
 function update_package_provider() {
@@ -277,7 +278,7 @@ function install_chef_client() {
         /usr/bin/cgroups-mount  # ?
     fi
 
-    http_proxy=${JENKINS_PROXY} curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
+    curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
     wait $!
 }
 
