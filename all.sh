@@ -235,6 +235,10 @@ collect_tasks
 
 retval=0
 
+# allow services chance to reconnect to amqp
+echo "allowing services to reconnect to amqp...stand by"
+sleep 40
+
 # setup test list
 declare -a testlist=(nova glance swift keystone glance-swift)
 if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
