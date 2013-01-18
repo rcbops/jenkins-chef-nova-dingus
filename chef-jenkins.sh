@@ -5,7 +5,7 @@
 JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_NUMBER:-${USER}-${RANDOM}}
 JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
-AVAILABILITY_ZONE=${AVAILABILITY_ZONE:-nova}
+AZ=${AZ:-nova}
 
 # likely need overrides
 #CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
@@ -46,6 +46,10 @@ NETWORK_SPINUP_TIMEOUT=${NETWORK_SPINUP_TIMEOUT:-300}
 SPINUP_TIMEOUT=${SPINUP_TIMEOUT:-300}
 ACCESS_NETWORK=${ACCESS_NETWORK:-public}
 SSH_TIMEOUT=${SSH_TIMEOUT:-240}
+
+# for knife
+EDITOR=${EDITOR:-/bin/true}
+export EDITOR
 
 # currently running background tasks
 declare -A PIDS=()
@@ -205,9 +209,7 @@ function boot_and_wait() {
 
     # omfg this is so full of fail.  folsom api likes to return an epic 143 error someplace near here and
     # it is making me sad.
-    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1 || :
-    # sleep for 30 seconds after booting the instance
-    sleep 30s
+    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AZ} ${extra_flags} ${name} > /dev/null 2>&1 || :
 
     local count=0
 
@@ -334,9 +336,9 @@ function add_chef_clients() {
 
     for host in "$@"; do
         local hostname=$(hostname_for_host ${host})
-        echo "Creating entry on ${server} for ${hostname}"
-        EDITOR=/bin/true knife node create ${hostname}.novalocal -c ${knife}
+        background_task "knife node create \"${hostname}.novalocal\" -c \"${knife}\""
     done
+    collect_tasks
 }
 
 function wait_for_ssh() {
@@ -508,7 +510,7 @@ function create_chef_environment() {
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
-    EDITOR=/bin/true knife environment from file ${temp_env_file} -c ${knife}
+    knife environment from file ${temp_env_file} -c ${knife}
 
     rm -fr ${temp_env_file}
 
@@ -534,7 +536,7 @@ function set_environment() {
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
     sed -i -e "s/_default/${environment}/" ${TMPDIR}/${chef_node_name}.json
     sed -i -e 's/^{$/{"json_class": "Chef::Node",/' ${TMPDIR}/${chef_node_name}.json
-    EDITOR=/bin/true knife node from file ${TMPDIR}/${chef_node_name}.json -c ${knife}
+    knife node from file ${TMPDIR}/${chef_node_name}.json -c ${knife}
 #    knife node show ${chef_node_name} -c ${knife}
 }
 

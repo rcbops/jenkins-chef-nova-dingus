@@ -229,6 +229,9 @@ EOF
 
 x_with_server "fixerating" api <<EOF
 fix_for_tests
+/usr/sbin/service cinder-volume restart || :
+/usr/sbin/service cinder-api restart || :
+/usr/sbin/service cinder-scheduler restart || :
 EOF
 background_task "fc_do"
 collect_tasks
