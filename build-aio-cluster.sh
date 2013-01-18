@@ -3,7 +3,7 @@
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
-AVAILABILITY_ZONE=${AVAILABILITY_ZONE:testing}
+AZ=${AZ:testing}
 
 source $(dirname $0)/chef-jenkins.sh
 
