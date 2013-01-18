@@ -336,7 +336,6 @@ function add_chef_clients() {
 
     for host in "$@"; do
         local hostname=$(hostname_for_host ${host})
-        echo "Creating entry on ${server} for ${hostname}"
         background_task "knife node create \"${hostname}.novalocal\" -c \"${knife}\""
     done
     collect_tasks
