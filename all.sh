@@ -183,9 +183,10 @@ chef-client
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+# TODO(breu) add swift-proxy-server to the role_list for api2.  It is off now due to a bug.
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2]"
 if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2]"
 fi
 
 role_add chef-server api2 "$role_list"
