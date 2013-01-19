@@ -234,10 +234,8 @@ chef-client
 EOF
 
 # TODO(breu): verify that we still need this
-x_with_server "Fixerating the API nodes - restarting cinder" api <<EOF
+x_with_server "Fixerating the API nodes - restarting cinder.  Errors on api2 are OK." api api2 <<EOF
 fix_for_tests
-pkill nova-api-ec2 || :
-/usr/sbin/service nova-api-ec2 restart || :
 /usr/sbin/service cinder-volume restart || :
 /usr/sbin/service cinder-api restart || :
 /usr/sbin/service cinder-scheduler restart || :
@@ -248,7 +246,7 @@ collect_tasks
 retval=0
 
 # allow services chance to reconnect to amqp
-echo "allowing services to reconnect to amqp...stand by"
+print_banner "allowing services to reconnect to amqp...stand by"
 sleep 40
 
 # setup test list
@@ -288,5 +286,5 @@ if [ $retval -eq 0 ]; then
 fi
 
 END_TIME=$(date +%s)
-echo "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
+print_banner "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
 exit $retval
