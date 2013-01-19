@@ -7,6 +7,7 @@ PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
 source $(dirname $0)/chef-jenkins.sh
 
+print_banner "Initializing Job"
 init
 
 CHEF_ENV="bigcluster"
@@ -23,10 +24,11 @@ set -x
 declare -a cluster
 cluster=(mysql keystone glance api api2 horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
+print_banner "creating chef server"
 boot_and_wait chef-server
 wait_for_ssh chef-server
 
-x_with_server "Uploading cookbooks" "chef-server" <<EOF
+x_with_server "Uploading cookbooks and booting the cluster" "chef-server" <<EOF
 set_package_provider
 update_package_provider
 flush_iptables
@@ -41,11 +43,13 @@ EOF
 background_task "fc_do"
 
 boot_cluster ${cluster[@]}
+
+print_banner "Waiting for IP connectivity to the instances"
 wait_for_cluster_ssh ${cluster[@]}
+print_banner "Waiting for SSH to become available"
 wait_for_cluster_ssh_key ${cluster[@]}
 
-echo "Cluster booted... setting up vpn thing"
-x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
+x_with_cluster "Cluster booted.  Setting up the VPN thing." ${cluster[@]} <<EOF
 wait_for_rhn
 set_package_provider
 update_package_provider
@@ -53,9 +57,9 @@ run_twice install_package bridge-utils
 EOF
 setup_private_network eth0 br99 api ${cluster[@]}
 
+print_banner "Setting up the chef environment"
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
-
 create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
@@ -85,10 +89,10 @@ add_chef_clients chef-server ${cluster[@]}
 # nodes to prep with base and build-essentials.
 prep_list=(keystone glance api api2 horizon compute1 compute2)
 for d in "${prep_list[@]}"; do
-    role_add chef-server ${d} "role[base],recipe[build-essential]"
+    background_task role_add chef-server ${d} "role[base],recipe[build-essential]"
 done
 
-x_with_cluster "Installing chef-client" ${cluster[@]} <<EOF
+x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 flush_iptables
 install_chef_client
 fetch_validation_pem $(ip_for_host chef-server)
@@ -190,12 +194,12 @@ role_add chef-server compute2 "role[single-compute]"
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
-x_with_cluster "proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
+x_with_cluster "Running chef on proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
 chef-client
 EOF
 
 # Now run all the storage servers
-x_with_cluster "Storage - Pass 2" storage{1..3} <<EOF
+x_with_cluster "Running chef on Storage nodes - Pass 2" storage{1..3} <<EOF
 chef-client
 EOF
 
@@ -223,12 +227,16 @@ chef-client
 EOF
 
 # and again on computes, just to ensure mq connectivity
+# TODO(breu): is this needed?
 x_with_cluster "computes - final pass" compute{1,2} <<EOF
 chef-client
 EOF
 
-x_with_server "fixerating" api <<EOF
+# TODO(breu): verify that we still need this
+x_with_server "Fixerating the API nodes - restarting cinder" api <<EOF
 fix_for_tests
+pkill nova-api-ec2 || :
+/usr/sbin/service nova-api-ec2 restart || :
 /usr/sbin/service cinder-volume restart || :
 /usr/sbin/service cinder-api restart || :
 /usr/sbin/service cinder-scheduler restart || :

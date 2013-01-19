@@ -173,6 +173,36 @@ function translate_image() {
     _RET=${candidates}
 }
 
+function print_repeat() {
+    local i
+    echo -n $3
+    for((i=1; i<=$2; i++)); {
+        echo -n $1
+    }
+    echo $4
+}
+
+function print_banner() {
+    local max_length=0
+    local n
+
+    local IFS=$'\n'
+    for n in $@; do 
+        local temp_line_count=${#n}
+        if [[ $temp_line_count -gt $max_length ]]; then
+            max_length=$temp_line_count
+        fi
+    done;
+    print_repeat '#' $max_length '##' '##'
+    for n in $@; do
+        echo -n "# "
+        echo -n $n
+        local line_l=${#n}
+        print_repeat ' ' $((max_length-line_l)) '' ' #'
+    done;
+    print_repeat '#' $max_length '##' '##'
+}
+
 function boot_and_wait() {
     # $1 - name
     # $2 - image
@@ -685,7 +715,7 @@ function x_with_server() {
     fc_reset_tasks
     OPERANT_TASK=$1
 
-    echo "Creating fc_do task for ${OPERANT_TASK}"
+    print_banner "Creating fc_do task for ${OPERANT_TASK}"
     while read -r line; do
         fc_add_task ${line}
     done
@@ -697,7 +727,7 @@ function x_with_cluster() {
     local task_description="$1"
     shift
 
-    echo "Running cluster task \"${task_description}\""
+    print_banner "Running cluster task \"${task_description}\""
     tasks=()
 
     while read -r line; do
