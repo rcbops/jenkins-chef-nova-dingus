@@ -207,7 +207,8 @@ EOF
 role_add chef-server api "recipe[kong],recipe[exerstack]"
 
 # Turn on loadbalancing
-role_add chef-server horizon "role[openstack-ha]"
+# TODO(breu): this is broke right now
+#role_add chef-server horizon "role[openstack-ha]"
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
