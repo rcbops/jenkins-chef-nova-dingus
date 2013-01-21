@@ -152,7 +152,7 @@ for node_no in {1..3}; do
     set_node_attribute chef-server storage${node_no} "normal/swift" "{\"zone\": ${node_no} }"
 done
 
-role_add chef-server glance "role[glance-registry],role[glance-api]"
+role_add chef-server glance "role[glance-setup],role[glance-registry],role[glance-api]"
 
 x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
 chef-client
