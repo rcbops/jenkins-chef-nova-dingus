@@ -183,10 +183,9 @@ chef-client
 EOF
 
 # setup the role list for api2
-# TODO(breu) add swift-proxy-server to the role_list for api2.  It is off now due to a bug.
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2]"
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 fi
 
 role_add chef-server api2 "$role_list"
@@ -207,8 +206,7 @@ EOF
 role_add chef-server api "recipe[kong],recipe[exerstack]"
 
 # Turn on loadbalancing
-# TODO(breu): this is broke right now
-#role_add chef-server horizon "role[openstack-ha]"
+role_add chef-server horizon "role[openstack-ha]"
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
@@ -245,10 +243,6 @@ background_task "fc_do"
 collect_tasks
 
 retval=0
-
-# allow services chance to reconnect to amqp
-print_banner "allowing services to reconnect to amqp...stand by"
-sleep 40
 
 # setup test list
 declare -a testlist=(nova glance swift keystone glance-swift)
