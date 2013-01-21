@@ -145,7 +145,7 @@ x_with_cluster "Installing keystone" keystone <<EOF
 chef-client
 EOF
 
-role_add chef-server proxy "role[swift-management-server],role[swift-proxy-server]"
+role_add chef-server proxy "role[swift-management-server],role[swift-setup],role[swift-proxy-server]"
 
 for node_no in {1..3}; do
     role_add chef-server storage${node_no} "role[swift-object-server],role[swift-container-server],role[swift-account-server]"
