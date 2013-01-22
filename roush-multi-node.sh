@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 START_TIME=$(date +%s)
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-bridge-precise}
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -18,7 +18,6 @@ x_with_server "installing roush-server" roush <<EOF
 curl -s "http://3199f7b8138ccd4a5141-1f05446a499ccbc56d624169ca685698.r0.cf1.rackcdn.com/install-server.sh" | bash
 EOF
 background_task "fc_do"
-collect_tasks
 
 # install roush-agent
 x_with_cluster "Installing Roush-Agent" node1 node2 node3 <<EOF
@@ -30,4 +29,4 @@ EOF
 x_with_server "Checking Roush Server" roush <<EOF
 r2 node list
 EOF
-# background_task "fc_do"
+fc_do
