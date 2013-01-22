@@ -30,4 +30,4 @@ EOF
 x_with_server "Checking Roush Server" roush <<EOF
 r2 node list
 EOF
-background_task "fc_do"
+# background_task "fc_do"
