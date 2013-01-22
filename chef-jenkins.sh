@@ -5,11 +5,12 @@
 JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_NUMBER:-${USER}-${RANDOM}}
 JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
-AVAILABILITY_ZONE=${AVAILABILITY_ZONE:-nova}
+AZ=${AZ:-nova}
 
 # likely need overrides
 #CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
-CHEF_IMAGE=${CHEF_IMAGE:-bafd879c-b8ab-47e3-bf2f-969c825c88ba}
+#CHEF_IMAGE=${CHEF_IMAGE:-bafd879c-b8ab-47e3-bf2f-969c825c88ba}
+CHEF_IMAGE=${CHEF_IMAGE:-3e4a8447-a047-4dc4-a7e4-67b3cd3961c3}
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 
 CHEF_FLAVOR=${CHEF_FLAVOR:-6}
@@ -45,6 +46,10 @@ NETWORK_SPINUP_TIMEOUT=${NETWORK_SPINUP_TIMEOUT:-300}
 SPINUP_TIMEOUT=${SPINUP_TIMEOUT:-300}
 ACCESS_NETWORK=${ACCESS_NETWORK:-public}
 SSH_TIMEOUT=${SSH_TIMEOUT:-240}
+
+# for knife
+EDITOR=${EDITOR:-/bin/true}
+export EDITOR
 
 # currently running background tasks
 declare -A PIDS=()
@@ -168,6 +173,36 @@ function translate_image() {
     _RET=${candidates}
 }
 
+function print_repeat() {
+    local i
+    echo -n $3
+    for((i=1; i<=$2; i++)); {
+        echo -n $1
+    }
+    echo $4
+}
+
+function print_banner() {
+    local max_length=0
+    local n
+
+    local IFS=$'\n'
+    for n in $@; do 
+        local temp_line_count=${#n}
+        if [[ $temp_line_count -gt $max_length ]]; then
+            max_length=$temp_line_count
+        fi
+    done;
+    print_repeat '#' $max_length '##' '##'
+    for n in $@; do
+        echo -n "# "
+        echo -n $n
+        local line_l=${#n}
+        print_repeat ' ' $((max_length-line_l)) '' ' #'
+    done;
+    print_repeat '#' $max_length '##' '##'
+}
+
 function boot_and_wait() {
     # $1 - name
     # $2 - image
@@ -204,9 +239,7 @@ function boot_and_wait() {
 
     # omfg this is so full of fail.  folsom api likes to return an epic 143 error someplace near here and
     # it is making me sad.
-    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AVAILABILITY_ZONE} ${extra_flags} ${name} > /dev/null 2>&1 || :
-    # sleep for 30 seconds after booting the instance
-    sleep 30s
+    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AZ} ${extra_flags} ${name} > /dev/null 2>&1 || :
 
     local count=0
 
@@ -318,22 +351,44 @@ function ip_for_host() {
     echo $NODE_IP
 }
 
+function hostname_for_host() {
+    # $1 - host
+    [ -e ${TMPDIR}/nodes/${JOBID}-${1} ]
+
+    source ${TMPDIR}/nodes/${JOBID}-${1}
+    echo $NODE_NAME
+}
+
+function add_chef_clients() {
+    local server=$1
+    shift
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+
+    for host in "$@"; do
+        local hostname=$(hostname_for_host ${host})
+        background_task "knife node create \"${hostname}.novalocal\" -c \"${knife}\""
+    done
+    collect_tasks
+}
+
 function wait_for_ssh() {
-    # $1 - ip
-    local ip=$1
+    # $1 - hostname
+    local host_name=$1
+    local ip=$(ip_for_host ${host_name})
 
     timeout ${SSH_TIMEOUT} sh -c "while ! nc ${ip} 22 -w 1 -q 0 < /dev/null > /dev/null;do :; done"
     sleep 2
 }
 
 function wait_for_ssh_key() {
-    # $1 - ip
-    local ip=$1
+    # $1 - hostname
+    local host_name=$1
     local connected=0
     local count=0
     local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     local user=${LOGIN}
     local result
+    local ip=$(ip_for_host ${host_name})
 
     while [[ $connected = 0 ]] && (( count < SSH_TIMEOUT / 5 )); do
         timeout ${SSH_TIMEOUT} ssh -i ${PRIVKEY} ${sshopts} ${user}@${ip} "/bin/true"
@@ -352,16 +407,25 @@ function wait_for_cluster_ssh() {
     for host in "$@"; do
         declare -a hostinfo
         hostinfo=(${host//:/ })
+        local host_name=${hostinfo[0]}
 
-        local name=${hostinfo[0]}
-        local ip=$(ip_for_host ${name})
-
-        background_task "wait_for_ssh ${ip}"
-        background_task "wait_for_ssh_key ${ip}"
+        background_task "wait_for_ssh ${host_name}"
     done
-
     collect_tasks
 }
+
+function wait_for_cluster_ssh_key() {
+    for host in "$@"; do
+        declare -a hostinfo
+        hostinfo=(${host//:/ })
+        local host_name=${hostinfo[0]}
+
+        background_task "wait_for_ssh_key ${host_name}"
+    done
+    collect_tasks
+}
+
+
 
 function background_task() {
     outfile=$(mktemp)
@@ -476,7 +540,7 @@ function create_chef_environment() {
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
-    EDITOR=/bin/true knife environment from file ${temp_env_file} -c ${knife}
+    knife environment from file ${temp_env_file} -c ${knife}
 
     rm -fr ${temp_env_file}
 
@@ -502,7 +566,7 @@ function set_environment() {
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
     sed -i -e "s/_default/${environment}/" ${TMPDIR}/${chef_node_name}.json
     sed -i -e 's/^{$/{"json_class": "Chef::Node",/' ${TMPDIR}/${chef_node_name}.json
-    EDITOR=/bin/true knife node from file ${TMPDIR}/${chef_node_name}.json -c ${knife}
+    knife node from file ${TMPDIR}/${chef_node_name}.json -c ${knife}
 #    knife node show ${chef_node_name} -c ${knife}
 }
 
@@ -651,7 +715,7 @@ function x_with_server() {
     fc_reset_tasks
     OPERANT_TASK=$1
 
-    echo "Creating fc_do task for ${OPERANT_TASK}"
+    print_banner "Creating fc_do task for ${OPERANT_TASK}"
     while read -r line; do
         fc_add_task ${line}
     done
@@ -663,7 +727,7 @@ function x_with_cluster() {
     local task_description="$1"
     shift
 
-    echo "Running cluster task \"${task_description}\""
+    print_banner "Running cluster task \"${task_description}\""
     tasks=()
 
     while read -r line; do

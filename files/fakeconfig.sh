@@ -111,6 +111,7 @@ function set_package_provider() {
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
         yum clean all
     fi
+    echo "proxy=${JENKINS_PROXY}" >> /root/.curlrc
 }
 
 function update_package_provider() {
@@ -127,6 +128,14 @@ function install_package() {
     else
         yum -y install "$@"
     fi
+}
+
+function start_chef_services() {
+    /etc/init.d/chef-expander start
+    /etc/init.d/chef-server-webui start
+    /etc/init.d/chef-solr start
+    /etc/init.d/rabbitmq-server start
+    /etc/init.d/chef-server start
 }
 
 function rabbitmq_fixup() {
@@ -269,10 +278,7 @@ function install_chef_client() {
         /usr/bin/cgroups-mount  # ?
     fi
 
-    export http_proxy=${JENKINS_PROXY}
-    #curl -skS http://s3.amazonaws.com/opscode-full-stack/install.sh | /bin/bash &
     curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
-    unset http_proxy
     wait $!
 }
 

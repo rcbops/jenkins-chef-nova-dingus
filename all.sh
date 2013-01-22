@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+
 START_TIME=$(date +%s)
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
 source $(dirname $0)/chef-jenkins.sh
 
+print_banner "Initializing Job"
 init
 
 CHEF_ENV="bigcluster"
@@ -22,14 +24,16 @@ set -x
 declare -a cluster
 cluster=(mysql keystone glance api api2 horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
 
+print_banner "creating chef server"
 boot_and_wait chef-server
-wait_for_ssh $(ip_for_host chef-server)
+wait_for_ssh chef-server
 
-x_with_server "Uploading cookbooks" "chef-server" <<EOF
+x_with_server "Uploading cookbooks and booting the cluster" "chef-server" <<EOF
 set_package_provider
 update_package_provider
 flush_iptables
 run_twice install_package git-core
+start_chef_services
 rabbitmq_fixup
 chef_fixup
 run_twice checkout_cookbooks
@@ -39,10 +43,13 @@ EOF
 background_task "fc_do"
 
 boot_cluster ${cluster[@]}
-wait_for_cluster_ssh ${cluster[@]}
 
-echo "Cluster booted... setting up vpn thing"
-x_with_cluster "installing bridge-utils" ${cluster[@]} <<EOF
+print_banner "Waiting for IP connectivity to the instances"
+wait_for_cluster_ssh ${cluster[@]}
+print_banner "Waiting for SSH to become available"
+wait_for_cluster_ssh_key ${cluster[@]}
+
+x_with_cluster "Cluster booted.  Setting up the VPN thing." ${cluster[@]} <<EOF
 wait_for_rhn
 set_package_provider
 update_package_provider
@@ -50,16 +57,17 @@ run_twice install_package bridge-utils
 EOF
 setup_private_network eth0 br99 api ${cluster[@]}
 
+print_banner "Setting up the chef environment"
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
-
 create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
 # Define vrrp ips
-api_vrrp_ip="10.127.55.1${EXECUTOR_NUMBER}"
-db_vrrp_ip="10.127.55.10${EXECUTOR_NUMBER}"
+api_vrrp_ip="10.127.54.1${EXECUTOR_NUMBER}"
+db_vrrp_ip="10.127.54.10${EXECUTOR_NUMBER}"
+rabbitmq_vrrp_ip="10.127.54.20${EXECUTOR_NUMBER}"
 
 # add the lb service vips to the environment
 knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
@@ -69,10 +77,30 @@ a['vips']['keystone-service-api']='${api_vrrp_ip}';
 a['vips']['keystone-admin-api']='${api_vrrp_ip}';
 a['vips']['cinder-api']='${api_vrrp_ip}';
 a['vips']['swift-proxy']='${api_vrrp_ip}';
+a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
 # Disable glance image_uploading
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
+
+# add the clients to the chef server
+add_chef_clients chef-server ${cluster[@]}
+
+# nodes to prep with base and build-essentials.
+prep_list=(keystone glance api api2 horizon compute1 compute2)
+for d in "${prep_list[@]}"; do
+    background_task role_add chef-server ${d} "role[base],recipe[build-essential]"
+done
+
+x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
+flush_iptables
+install_chef_client
+fetch_validation_pem $(ip_for_host chef-server)
+copy_file client-template.rb /etc/chef/client-template.rb
+template_client $(ip_for_host chef-server)
+chef-client
+EOF
+
 
 # fix up the storage nodes
 x_with_cluster "un-fscking ephemerals" storage1 storage2 storage3 <<EOF
@@ -92,52 +120,46 @@ vgcreate cinder-volumes /dev/vdb
 EOF
 fi
 
-x_with_cluster "Running/registering chef-client" ${cluster[@]} <<EOF
-flush_iptables
-install_chef_client
-fetch_validation_pem $(ip_for_host chef-server)
-copy_file client-template.rb /etc/chef/client-template.rb
-template_client $(ip_for_host chef-server)
-chef-client
-EOF
-
-# set the environment in one shot
-#set_environment_all chef-server ${CHEF_ENV}
-
-# nodes to prep with base and build-essentials.
-prep_list=(keystone glance api api2 horizon compute1 compute2)
-for d in "${prep_list[@]}"; do
-    x_with_server "prep chef with base role on instance ${d}" ${d} <<EOF
-prep_chef_client
-EOF
-    background_task "fc_do"
-done
-
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing mysql" mysql <<EOF
 chef-client
 EOF
 
-role_add chef-server keystone "role[rabbitmq-server],role[keystone]"
+# install rabbit message bus early and everywhere it is needed.
+role_add chef-server "keystone" "role[rabbitmq-server]"
+role_add chef-server "api2" "role[rabbitmq-server]"
+
+# this needs to be two separate runs because there exists a race condition where
+# running this at the same time on two nodes generates different erlang cookies
+# and that will break clustering in the next release.  Run it one at a time and
+# we won't have any problems.  Darren - fix this!
+x_with_cluster "Installing rabbit message bus master on keystone" keystone <<EOF
+chef-client
+EOF
+x_with_cluster "Installing rabbit message bus secondary on api2" api2 <<EOF
+chef-client
+EOF
+
+role_add chef-server keystone "role[keystone]"
 x_with_cluster "Installing keystone" keystone <<EOF
 chef-client
 EOF
 
-role_add chef-server proxy "role[swift-management-server],role[swift-proxy-server]"
+role_add chef-server proxy "role[swift-management-server],role[swift-setup],role[swift-proxy-server]"
 
 for node_no in {1..3}; do
     role_add chef-server storage${node_no} "role[swift-object-server],role[swift-container-server],role[swift-account-server]"
     set_node_attribute chef-server storage${node_no} "normal/swift" "{\"zone\": ${node_no} }"
 done
 
-role_add chef-server glance "role[glance-registry],role[glance-api]"
+role_add chef-server glance "role[glance-setup],role[glance-registry],role[glance-api]"
 
 x_with_cluster "Installing glance and swift proxy" proxy glance <<EOF
 chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-network-setup],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
 case "$PACKAGE_COMPONENT" in
 essex-final) role_list+=",role[nova-volume]"
              ;;
@@ -157,13 +179,13 @@ role_add chef-server api "$role_list"
 role_add chef-server horizon "role[horizon-server]"
 
 x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
-chef-client -ldebug
+chef-client
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 fi
 
 role_add chef-server api2 "$role_list"
@@ -172,12 +194,12 @@ role_add chef-server compute2 "role[single-compute]"
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
-x_with_cluster "proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
+x_with_cluster "Running chef on proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
 chef-client
 EOF
 
 # Now run all the storage servers
-x_with_cluster "Storage - Pass 2" storage{1..3} <<EOF
+x_with_cluster "Running chef on Storage nodes - Pass 2" storage{1..3} <<EOF
 chef-client
 EOF
 
@@ -194,8 +216,7 @@ EOF
 # turn on glance uploads again
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
-# this sucks - but we need to do it because we can't do glance image upload on two nodes at the time
-# time.
+# this sucks - but we need to do it because we can't do glance image upload on two nodes at the same time
 x_with_cluster "Glance Image Upload" glance <<EOF
 chef-client
 EOF
@@ -205,8 +226,18 @@ x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client
 EOF
 
-x_with_server "fixerating" api <<EOF
+# and again on computes, just to ensure mq connectivity
+# TODO(breu): is this needed?
+x_with_cluster "computes - final pass" compute{1,2} <<EOF
+chef-client
+EOF
+
+# TODO(breu): verify that we still need this
+x_with_server "Fixerating the API nodes - restarting cinder.  Errors on api2 are OK." api api2 <<EOF
 fix_for_tests
+/usr/sbin/service cinder-volume restart || :
+/usr/sbin/service cinder-api restart || :
+/usr/sbin/service cinder-scheduler restart || :
 EOF
 background_task "fc_do"
 collect_tasks
@@ -250,5 +281,5 @@ if [ $retval -eq 0 ]; then
 fi
 
 END_TIME=$(date +%s)
-echo "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
+print_banner "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
 exit $retval
