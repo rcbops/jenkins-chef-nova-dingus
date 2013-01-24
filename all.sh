@@ -126,22 +126,10 @@ chef-client
 EOF
 
 # install rabbit message bus early and everywhere it is needed.
-role_add chef-server "keystone" "role[rabbitmq-server]"
+role_add chef-server "keystone" "role[rabbitmq-server],role[keystone]"
 role_add chef-server "api2" "role[rabbitmq-server]"
 
-# this needs to be two separate runs because there exists a race condition where
-# running this at the same time on two nodes generates different erlang cookies
-# and that will break clustering in the next release.  Run it one at a time and
-# we won't have any problems.  Darren - fix this!
-x_with_cluster "Installing rabbit message bus master on keystone" keystone <<EOF
-chef-client
-EOF
-x_with_cluster "Installing rabbit message bus secondary on api2" api2 <<EOF
-chef-client
-EOF
-
-role_add chef-server keystone "role[keystone]"
-x_with_cluster "Installing keystone" keystone <<EOF
+x_with_cluster "Installing rabbit/keystone on keystone, rabbit on api2" keystone api2 <<EOF
 chef-client
 EOF
 
