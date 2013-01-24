@@ -214,12 +214,6 @@ x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client
 EOF
 
-# and again on computes, just to ensure mq connectivity
-# TODO(breu): is this needed?
-x_with_cluster "computes - final pass" compute{1,2} <<EOF
-chef-client
-EOF
-
 retval=0
 
 # setup test list
