@@ -11,9 +11,10 @@ print_banner "Initializing Job"
 init
 
 CHEF_ENV="bigcluster"
-echo "using environment ${CHEF_ENV}"
-echo "Using INSTANCE_IMAGE ${INSTANCE_IMAGE}"
-echo "Building for ${PACKAGE_COMPONENT}"
+print_banner "using environment ${CHEF_ENV}
+Using INSTANCE_IMAGE ${INSTANCE_IMAGE}
+Using EXECUTOR_NUMBER ${EXECUTOR_NUMBER}
+Building for ${PACKAGE_COMPONENT}"
 
 rm -rf logs
 mkdir -p logs/run
