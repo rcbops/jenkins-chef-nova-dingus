@@ -131,22 +131,10 @@ chef-client
 EOF
 
 # install rabbit message bus early and everywhere it is needed.
-role_add chef-server "keystone" "role[rabbitmq-server]"
+role_add chef-server "keystone" "role[rabbitmq-server],role[keystone]"
 role_add chef-server "api2" "role[rabbitmq-server]"
 
-# this needs to be two separate runs because there exists a race condition where
-# running this at the same time on two nodes generates different erlang cookies
-# and that will break clustering in the next release.  Run it one at a time and
-# we won't have any problems.  Darren - fix this!
-x_with_cluster "Installing rabbit message bus master on keystone" keystone <<EOF
-chef-client
-EOF
-x_with_cluster "Installing rabbit message bus secondary on api2" api2 <<EOF
-chef-client
-EOF
-
-role_add chef-server keystone "role[keystone]"
-x_with_cluster "Installing keystone" keystone <<EOF
+x_with_cluster "Installing rabbit/keystone on keystone, rabbit on api2" keystone api2 <<EOF
 chef-client
 EOF
 
@@ -230,22 +218,6 @@ EOF
 x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client
 EOF
-
-# and again on computes, just to ensure mq connectivity
-# TODO(breu): is this needed?
-x_with_cluster "computes - final pass" compute{1,2} <<EOF
-chef-client
-EOF
-
-# TODO(breu): verify that we still need this
-x_with_server "Fixerating the API nodes - restarting cinder.  Errors on api2 are OK." api api2 <<EOF
-fix_for_tests
-/usr/sbin/service cinder-volume restart || :
-/usr/sbin/service cinder-api restart || :
-/usr/sbin/service cinder-scheduler restart || :
-EOF
-background_task "fc_do"
-collect_tasks
 
 retval=0
 
