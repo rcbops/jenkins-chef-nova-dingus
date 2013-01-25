@@ -68,6 +68,10 @@ knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 api_vrrp_ip="10.127.54.1${EXECUTOR_NUMBER}"
 db_vrrp_ip="10.127.54.10${EXECUTOR_NUMBER}"
 rabbitmq_vrrp_ip="10.127.54.20${EXECUTOR_NUMBER}"
+print_banner "VRRP configuration:
+API   : ${api_vrrp_ip}
+DB    : ${db_vrrp_ip}
+RABBIT: ${rabbitmq_vrrp_ip}"
 
 # add the lb service vips to the environment
 knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
