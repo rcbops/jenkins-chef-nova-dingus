@@ -219,6 +219,12 @@ x_with_cluster "All nodes - Pass 2" ${cluster[@]} <<EOF
 chef-client
 EOF
 
+x_with_server "Fixerating the API nodes" api <<EOF
+fix_for_tests
+EOF
+background_task "fc_do"
+collect_tasks
+
 retval=0
 
 # setup test list
