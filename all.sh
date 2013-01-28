@@ -83,6 +83,7 @@ a['vips']['keystone-admin-api']='${api_vrrp_ip}';
 a['vips']['cinder-api']='${api_vrrp_ip}';
 a['vips']['swift-proxy']='${api_vrrp_ip}';
 a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
+a['vips']['mysql-db']='${db_vrrp_ip}';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
 # Disable glance image_uploading
@@ -132,9 +133,9 @@ EOF
 
 # install rabbit message bus early and everywhere it is needed.
 role_add chef-server "keystone" "role[rabbitmq-server],role[keystone]"
-role_add chef-server "api2" "role[rabbitmq-server]"
+role_add chef-server "api2" "role[rabbitmq-server],role[mysql-master]"
 
-x_with_cluster "Installing rabbit/keystone on keystone, rabbit on api2" keystone api2 <<EOF
+x_with_cluster "Installing rabbit/keystone on keystone, rabbit/mysql on api2" keystone api2 <<EOF
 chef-client
 EOF
 
