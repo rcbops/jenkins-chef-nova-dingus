@@ -66,9 +66,9 @@ create_chef_environment chef-server ${CHEF_ENV}
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
 # Define vrrp ips
-api_vrrp_ip="10.127.54.1${EXECUTOR_NUMBER}"
-db_vrrp_ip="10.127.54.10${EXECUTOR_NUMBER}"
-rabbitmq_vrrp_ip="10.127.54.20${EXECUTOR_NUMBER}"
+api_vrrp_ip=$(ip_for_host api | awk 'BEGIN{FS="."};{print "10.127.54."$4})
+db_vrrp_ip=$(ip_for_host mysql | awk 'BEGIN{FS="."};{print "10.127.54."$4})
+rabbitmq_vrrp_ip=$(ip_for_host keystone | awk 'BEGIN{FS="."};{print "10.127.54."$4})
 print_banner "VRRP configuration:
 API   : ${api_vrrp_ip}
 DB    : ${db_vrrp_ip}
