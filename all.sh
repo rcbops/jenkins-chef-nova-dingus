@@ -11,10 +11,14 @@ print_banner "Initializing Job"
 init
 
 CHEF_ENV="bigcluster"
-print_banner "using environment ${CHEF_ENV}
-Using INSTANCE_IMAGE ${INSTANCE_IMAGE}
-Using EXECUTOR_NUMBER ${EXECUTOR_NUMBER}
-Building for ${PACKAGE_COMPONENT}"
+print_banner "Build Parameters
+~~~~~~~~~~~~~~~~
+environment = ${CHEF_ENV}
+INSTANCE_IMAGE = ${INSTANCE_IMAGE}
+EXECUTOR_NUMBER = ${EXECUTOR_NUMBER}
+TMPDIR = ${TMPDIR}
+GIT_PATCH_URL = ${GIT_PATCH_URL}
+We are building for ${PACKAGE_COMPONENT}"
 
 rm -rf logs
 mkdir -p logs/run

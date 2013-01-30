@@ -136,7 +136,6 @@ function init() {
 
 
     export TMPDIR=$(mktemp -d)
-    echo "Using TMPDIR=${TMPDIR}"
     mkdir -p ${TMPDIR}/nodes
     mkdir -p ${TMPDIR}/scripts
     source ${CREDENTIALS}
