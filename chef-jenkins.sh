@@ -626,10 +626,10 @@ function run_tests() {
 
     x_with_server "running tests" ${server} <<-EOF
         cd /opt/exerstack
-        ./exercise.sh ${version} ${exerstack_tests}
+        ONESHOT=1 ./exercise.sh ${version} ${exerstack_tests}
 
         cd /opt/kong
-        ./run_tests.sh --version ${version} ${kong_tests}
+        ONESHOT=1 ./run_tests.sh --version ${version} ${kong_tests}
 EOF
     fc_do
 }
