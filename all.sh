@@ -15,6 +15,7 @@ print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
 INSTANCE_IMAGE = ${INSTANCE_IMAGE}
+AVAILABILITY_ZONE = ${AZ}
 EXECUTOR_NUMBER = ${EXECUTOR_NUMBER}
 TMPDIR = ${TMPDIR}
 GIT_PATCH_URL = ${GIT_PATCH_URL}
