@@ -87,6 +87,7 @@ a['vips']['keystone-admin-api']='${api_vrrp_ip}';
 a['vips']['cinder-api']='${api_vrrp_ip}';
 a['vips']['swift-proxy']='${api_vrrp_ip}';
 a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
+a['vips']['mysql-db']='${db_vrrp_ip}';
 @e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
 
 # Disable glance image_uploading
@@ -130,7 +131,12 @@ EOF
 fi
 
 role_add chef-server mysql "role[mysql-master]"
-x_with_cluster "Installing mysql" mysql <<EOF
+x_with_cluster "Installing first mysql" mysql <<EOF
+chef-client
+EOF
+
+role_add chef-server api2 "role[mysql-master]"
+x_with_cluster "Installing second mysql" api2 <<EOF
 chef-client
 EOF
 
@@ -156,11 +162,10 @@ chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-ec2],role[nova-api-os-compute],role[nova-vncproxy]"
 case "$PACKAGE_COMPONENT" in
-essex-final) role_list+=",role[nova-volume]"
+essex-final) role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[nova-volume]"
              ;;
-folsom)      role_list+=",role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume]"
+folsom)      role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy]"
              ;;
 *)           echo "WARNING!  UNKNOWN PACKAGE_COMPONENT ($PACKAGE_COMPONENT)"
              exit 100
