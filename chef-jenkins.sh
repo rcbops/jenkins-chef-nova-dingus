@@ -6,6 +6,7 @@ JOBID=${JOB_NAME:-$(basename $0 .sh)}_${BUILD_NUMBER:-${USER}-${RANDOM}}
 JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
 AZ=${AZ:-nova}
+CHEF_CLIENT_VERSION=${CHEF_CLIENT_VERSION:-LATEST}
 
 # likely need overrides
 #CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
@@ -802,7 +803,7 @@ function fc_do() {
 
     # pass through important environment vars.  This should
     # be configurable, but isn't.
-    for var in COOKBOOK_OVERRIDE GIT_PATCH_URL GIT_REPO GIT_DIFF_URL JENKINS_PROXY CHEF_ENV; do
+    for var in COOKBOOK_OVERRIDE GIT_PATCH_URL GIT_REPO GIT_DIFF_URL JENKINS_PROXY CHEF_ENV CHEF_CLIENT_VERSION; do
         echo "${var}=${!var}" >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
 
