@@ -278,7 +278,11 @@ function install_chef_client() {
         /usr/bin/cgroups-mount  # ?
     fi
 
-    curl -skS http://www.opscode.com/chef/install.sh | /bin/bash &
+    BASH_EXTRA_ARGS=""
+    if [[ ${CHEF_CLIENT_VERSION} != "LATEST" ]]; then
+        BASH_EXTRA_ARGS="-s - -v ${CHEF_CLIENT_VERSION}"
+    fi
+    curl -skS http://www.opscode.com/chef/install.sh | /bin/bash ${BASH_EXTRA_ARGS} &
     wait $!
 }
 
