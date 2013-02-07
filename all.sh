@@ -196,7 +196,7 @@ role_add chef-server compute2 "role[single-compute]"
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
-x_with_cluster "Running chef on proxy/api/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
+x_with_cluster "Running chef on proxy/api/api2/horizon/computes" proxy api api2 horizon compute{1..2} <<EOF
 chef-client
 EOF
 
@@ -209,6 +209,10 @@ role_add chef-server api "recipe[kong],recipe[exerstack]"
 
 # Turn on loadbalancing
 role_add chef-server horizon "role[openstack-ha]"
+
+x_with_cluster "Running chef on horizon to get haproxy set up" horizon <<EOF
+chef-client
+EOF
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
