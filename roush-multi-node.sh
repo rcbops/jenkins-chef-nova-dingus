@@ -31,6 +31,10 @@ apt-get install -y git
 cd /opt
 git clone https://github.com/galstrom21/roush-testerator.git
 cd roush-testerator
-ROUSH_ENDPOINT="http://$(ip_for_host roush):8080" INSTANCE_COMPUTE_HOSTNAME=node2 INSTANCE_CONTROLLER_HOSTNAME=node1 INSTANCE_SERVER_HOSTNAME=roush ./run_tests.sh -V
+echo "ROUSH_ENDPOINT=http://$(ip_for_host roush):8080" > localrc
+echo "INSTANCE_COMPUTE_HOSTNAME=node2" >> localrc
+echo "INSTANCE_CONTROLLER_HOSTNAME=node1" >> localrc
+echo "INSTANCE_SERVER_HOSTNAME=roush" >> localrc
+source localrc; ./run_tests.sh -V
 EOF
 fc_do
