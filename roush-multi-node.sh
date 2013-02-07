@@ -26,7 +26,11 @@ curl -s "http://3199f7b8138ccd4a5141-1f05446a499ccbc56d624169ca685698.r0.cf1.rac
 EOF
 
 # make sure roush-server looks right
-x_with_server "Checking Roush Server" roush <<EOF
-r2 node list
+x_with_server "Running Happy Path Tests" roush <<EOF
+apt-get install -y git
+cd /opt
+git clone https://github.com/galstrom21/roush-testerator.git
+cd roush-testerator
+./run_tests.sh -V
 EOF
 fc_do
