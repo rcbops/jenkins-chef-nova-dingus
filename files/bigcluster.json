@@ -24,13 +24,26 @@
             "disk_test_filter": [
                 "candidate =~ /vd[^a]/",
                 "File.exist?('/dev/' + candidate)",
-                "info['removable'] = 0"
+                "info['removable'].to_i == 0"
             ]
         },
         "osops": {
             "apply_patches": true
         },
+        "cinder": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "keystone": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
         "nova": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            },
             "network": {
                 "multi_host": true
             },
