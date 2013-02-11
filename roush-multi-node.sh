@@ -20,7 +20,8 @@ EOF
 background_task "fc_do"
 
 # install roush-agent
-x_with_cluster "Installing Roush-Agent" node1 node2 node3 <<EOF
+# TODO(shep): roush node will need to be pulled out once install-server.sh is updated to drop the agent as well
+x_with_cluster "Installing Roush-Agent" roush node1 node2 node3 <<EOF
 export ROUSH_SERVER=$(ip_for_host roush)
 curl -s "https://bcd46edb6e5fd45555c0-409026321750f2e680f86e05ff37dd6d.ssl.cf1.rackcdn.com//install-agent.sh" | bash
 EOF
@@ -35,7 +36,9 @@ echo "export ROUSH_ENDPOINT=http://$(ip_for_host roush):8080" > localrc
 echo "export INSTANCE_SERVER_HOSTNAME=$(hostname_for_host roush).novalocal" >> localrc
 echo "export INSTANCE_CONTROLLER_HOSTNAME=$(hostname_for_host node1).novalocal" >> localrc
 echo "export INSTANCE_COMPUTE_HOSTNAME=$(hostname_for_host node2).novalocal" >> localrc
-r2 node list
+r2 node 4 show
+r2 node 5 show
+r2 node 6 show
 source localrc; ./run_tests.sh -V
 EOF
 fc_do
