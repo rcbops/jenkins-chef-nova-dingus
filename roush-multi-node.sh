@@ -32,9 +32,9 @@ cd /opt
 git clone https://github.com/galstrom21/roush-testerator.git
 cd roush-testerator
 echo "export ROUSH_ENDPOINT=http://$(ip_for_host roush):8080" > localrc
-echo "export INSTANCE_COMPUTE_HOSTNAME=${JOB_NAME}-node2.novalocal" >> localrc
-echo "export INSTANCE_CONTROLLER_HOSTNAME=${JOB_NAME}-node1.novalocal" >> localrc
-echo "export INSTANCE_SERVER_HOSTNAME=${JOB_NAME}-roush.novalocal" >> localrc
+echo "export INSTANCE_COMPUTE_HOSTNAME=${JOB_NAME}-${BUILD_NUMBER}-node2.novalocal" >> localrc
+echo "export INSTANCE_CONTROLLER_HOSTNAME=${JOB_NAME}-${BUILD_NUMBER}-node1.novalocal" >> localrc
+echo "export INSTANCE_SERVER_HOSTNAME=${JOB_NAME}-${BUILD_NUMBER}-roush.novalocal" >> localrc
 source localrc; ./run_tests.sh -V
 EOF
 fc_do
