@@ -85,6 +85,8 @@ a['vips']['nova-ec2-public']='${api_vrrp_ip}';
 a['vips']['keystone-service-api']='${api_vrrp_ip}';
 a['vips']['keystone-admin-api']='${api_vrrp_ip}';
 a['vips']['cinder-api']='${api_vrrp_ip}';
+a['vips']['glance-api']='${api_vrrp_ip}';
+a['vips']['glance-registry']='${api_vrrp_ip}';
 a['vips']['swift-proxy']='${api_vrrp_ip}';
 a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
 a['vips']['mysql-db']='${db_vrrp_ip}';
@@ -130,13 +132,17 @@ vgcreate cinder-volumes /dev/vdb
 EOF
 fi
 
-role_add chef-server mysql "role[mysql-master]"
-x_with_cluster "Installing first mysql" mysql <<EOF
+role_add chef-server api2 "role[mysql-master]"
+x_with_cluster "Installing first mysql" api2 <<EOF
 chef-client
 EOF
 
-role_add chef-server api2 "role[mysql-master]"
-x_with_cluster "Installing second mysql" api2 <<EOF
+role_add chef-server mysql "role[mysql-master]"
+x_with_cluster "Installing second mysql" mysql <<EOF
+chef-client
+EOF
+
+x_with_cluster "Finalising mysql replication on first mysql" api2 <<EOF
 chef-client
 EOF
 
@@ -163,9 +169,9 @@ EOF
 
 # setup the role list for api
 case "$PACKAGE_COMPONENT" in
-essex-final) role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[nova-volume]"
+essex-final) role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[nova-volume],role[glance-registry]"
              ;;
-folsom)      role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy]"
+folsom)      role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
              ;;
 *)           echo "WARNING!  UNKNOWN PACKAGE_COMPONENT ($PACKAGE_COMPONENT)"
              exit 100
