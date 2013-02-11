@@ -32,6 +32,10 @@ function prep_chef_client() {
     chef-client -o 'role[base],recipe[build-essential]'
 }
 
+function make_roush_log_dev_null() {
+    sed -i 's/^logfile=.*/logfile=\/dev\/null/g' /etc/roush/roush.conf 
+}
+
 function add_repo_key() {
     # $1 - repo
     #

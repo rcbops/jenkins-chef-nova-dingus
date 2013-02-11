@@ -8,7 +8,7 @@ source $(dirname $0)/chef-jenkins.sh
 init
 
 declare -a cluster
-cluster=(roush node1 node2 node3)
+cluster=(roush:jenkins-precise:roush node1:jenkins-precise:roush node2:jenkins-precise:roush node3:jenkins-precise:roush)
 
 boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
@@ -27,6 +27,8 @@ EOF
 
 # make sure roush-server looks right
 x_with_server "Running Happy Path Tests" roush <<EOF
+make_roush_log_dev_null
+service roush restart
 apt-get install -y git
 cd /opt
 git clone https://github.com/galstrom21/roush-testerator.git
@@ -35,9 +37,6 @@ echo "export ROUSH_ENDPOINT=http://$(ip_for_host roush):8080" > localrc
 echo "export INSTANCE_SERVER_HOSTNAME=$(hostname_for_host node1).novalocal" >> localrc
 echo "export INSTANCE_CONTROLLER_HOSTNAME=$(hostname_for_host node2).novalocal" >> localrc
 echo "export INSTANCE_COMPUTE_HOSTNAME=$(hostname_for_host node3).novalocal" >> localrc
-r2 node 4 show
-r2 node 5 show
-r2 node 6 show
 source localrc; ./run_tests.sh -V
 EOF
 fc_do
