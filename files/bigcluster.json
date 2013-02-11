@@ -78,7 +78,7 @@
             "root_network_acl": "10.%"
         },
         "osops_networks": {
-            "management": "10.0.0.0/8",
+            "management": "10.127.53.0/24",
             "nova": "10.0.0.0/8",
             "swift": "10.0.0.0/8",
             "swift-lb": "10.0.0.0/8",
