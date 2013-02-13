@@ -14,7 +14,7 @@ boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
 # setup packaging
-x_with_server "setup package providers" ${cluster[@]} <<EOF
+x_with_cluster "setup package providers" ${cluster[@]} <<EOF
 set_package_provider
 update_package_provider
 EOF
