@@ -13,12 +13,6 @@ cluster=(roush:jenkins-precise:roush node1:jenkins-precise:roush node2:jenkins-p
 boot_cluster ${cluster[@]}
 wait_for_cluster_ssh ${cluster[@]}
 
-# setup packaging
-x_with_cluster "setup package providers" ${cluster[@]} <<EOF
-set_package_provider
-update_package_provider
-EOF
-
 # install roush-server
 x_with_server "installing roush-server" roush <<EOF
 curl -s "https://bcd46edb6e5fd45555c0-409026321750f2e680f86e05ff37dd6d.ssl.cf1.rackcdn.com/install-server.sh" | bash
