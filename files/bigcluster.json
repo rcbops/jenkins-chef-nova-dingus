@@ -7,6 +7,9 @@
             "metric_provider": "collectd",
             "procmon_provider": "monit"
         },
+        "horizon": {
+          "theme": "Rackspace"
+        },
         "vips": {
           "nova-api": "127.0.0.2",
           "nova-ec2-public": "127.0.0.2",
