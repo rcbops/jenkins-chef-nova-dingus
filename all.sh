@@ -27,7 +27,7 @@ BASH_XTRACEFD=9
 set -x
 
 declare -a cluster
-cluster=(mysql keystone glance api api2 horizon compute1 compute2 proxy storage1 storage2 storage3 graphite)
+cluster=(mysql keystone glance api api2 horizon compute1 compute2 proxy storage1 storage2 storage3)
 
 print_banner "creating chef server"
 boot_and_wait chef-server
