@@ -1,0 +1,97 @@
+{
+    "cookbook_versions": {
+    },
+    "json_class": "Chef::Environment",
+    "override_attributes": {
+        "monitoring": {
+            "metric_provider": "collectd",
+            "procmon_provider": "monit"
+        },
+        "kong": {
+          "swift_store_region": "DFW"
+        },
+        "horizon": {
+          "theme": "Rackspace"
+        },
+        "vips": {
+          "nova-api": "127.0.0.2"
+        },
+        "swift": {
+            "use_informant": false,
+            "authkey": "3f281b71-ce89-4b27-a2ad-ad873d3f2760",
+            "swift_hash": "107c0568ea84",
+            "auto_rebuild_rings": true,
+            "authmode": "keystone",
+            "disk_test_filter": [
+                "candidate =~ /vd[^a]/",
+                "File.exist?('/dev/' + candidate)",
+                "info['removable'].to_i == 0"
+            ]
+        },
+        "osops": {
+            "apply_patches": true
+        },
+        "cinder": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "keystone": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "nova": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            },
+            "network": {
+                "multi_host": true
+            },
+            "apply_patches": true,
+            "libvirt": {
+                "virt_type": "qemu"
+            },
+            "networks": [
+                {
+                    "network_size": "255",
+                    "bridge_dev": "gretap.cont1",
+                    "ipv4_cidr": "192.168.100.0/24",
+                    "bridge": "br99",
+                    "dns1": "8.8.8.8",
+                    "dns2": "8.8.4.4",
+                    "num_networks": "1",
+                    "label": "public"
+                }
+            ]
+        },
+        "glance": {
+            "image_upload": false,
+            "api": {
+                "default_store": "swift",
+                "swift_store_user": "changeme",
+                "swift_store_key": "changeme",
+                "swift_store_auth_version": "2",
+                "swift_store_auth_address": "https://identity.api.rackspacecloud.com/v2.0/",
+                "swift_store_region": "DFW"
+            },
+            "images": [
+                "cirros"
+            ]
+        },
+        "mysql": {
+            "allow_remote_root": true,
+            "root_network_acl": "10.%"
+        },
+        "osops_networks": {
+            "management": "10.127.53.0/24",
+            "nova": "10.0.0.0/8",
+            "swift": "10.0.0.0/8",
+            "swift-lb": "10.0.0.0/8",
+            "public": "10.0.0.0/8"
+        }
+    },
+    "name": "ha",
+    "chef_type": "environment",
+    "description": ""
+}
