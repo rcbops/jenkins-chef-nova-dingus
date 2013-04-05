@@ -112,10 +112,10 @@ set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/im
 add_chef_clients chef-server ${cluster[@]}
 
 # nodes to prep with base and build-essentials.
-prep_list=(cont1 cont2 compute1 compute2)
-for d in "${prep_list[@]}"; do
-    background_task role_add chef-server ${d} "role[base],recipe[build-essential]"
-done
+#prep_list=(cont1 cont2 compute1 compute2)
+#for d in "${prep_list[@]}"; do
+#    background_task role_add chef-server ${d} "role[base],recipe[build-essential]"
+#done
 
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 flush_iptables
@@ -163,12 +163,12 @@ x_with_cluster "Glance Image Upload" cont1 <<EOF
 chef-client
 EOF
 
-# and again, just for good measure.
+# all nodes, just for good measure.
 x_with_cluster "All nodes" ${cluster[@]} <<EOF
 chef-client
 EOF
 
-x_with_cluster "Fixerating the controller nodes" cont1 cont2 <<EOF
+x_with_cluster "Fixerating the cont1 node" cont1 <<EOF
 fix_for_tests
 EOF
 background_task "fc_do"
@@ -189,13 +189,13 @@ if ( ! run_tests cont1 ${PACKAGE_COMPONENT} ${testlist[@]} ); then
     retval=1
 fi
 
-x_with_server "failing services to cont2" <<EOF
-service monit stop
-service keepalived stop
-EOF
-
-print_banner "wait for services to fail over nicely"
-sleep 30
+real_cont1_hostname=$(hostname_for_host cont1)
+print_banner "rebooting cont1 with hostname ${real_cont1_hostname} "
+nova reboot ${real_cont1_hostname}
+print_banner "waiting for cont1 to come back"
+wait_for_ssh cont1
+print_banner "setting up privatenet again on cont1"
+setup_private_network eth0 br99 cont1 cont1
 
 print_banner "running tests with all services on cont2"
 # run tests
