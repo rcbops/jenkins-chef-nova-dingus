@@ -14,7 +14,7 @@
           "theme": "Rackspace"
         },
         "vips": {
-          "keystone-service-api": "127.0.0.2",
+          "keystone-service-api": "127.0.0.2"
         },
         "swift": {
             "use_informant": false,
