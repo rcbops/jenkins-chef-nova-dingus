@@ -193,7 +193,8 @@ real_cont1_hostname=$(hostname_for_host cont1)
 print_banner "rebooting cont1 with hostname ${real_cont1_hostname} "
 nova reboot ${real_cont1_hostname}
 print_banner "waiting for cont1 to come back"
-wait_for_ssh cont1
+#wait_for_ssh cont1
+sleep 30
 print_banner "setting up privatenet again on cont1"
 setup_private_network eth0 br99 cont1 cont1
 
