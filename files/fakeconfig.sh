@@ -393,5 +393,5 @@ function fix_for_tests() {
         install_package "openstack-swift"
     fi
 
-    ip addr add 192.168.100.254/24 dev br99
+    ip addr add 192.168.100.254/24 dev br99 || true
 }
