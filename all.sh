@@ -66,7 +66,7 @@ print_banner "Setting up the chef environment"
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 create_chef_environment chef-server ${CHEF_ENV}
-# Set the package_component environment variable
+# Set the package_component environment variable (not really needed in grizzly but no matter)
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
 # Define vrrp ips
@@ -123,14 +123,12 @@ cp /tmp/newfstab /etc/fstab
 EOF
 
 # fix up api node with a cinder-volumes vg
-if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
 x_with_cluster "setting up cinder-volumes vg on api node for cinder" api <<EOF
 install_package lvm2
 umount /mnt
 pvcreate /dev/vdb
 vgcreate cinder-volumes /dev/vdb
 EOF
-fi
 
 role_add chef-server api2 "role[mysql-master]"
 x_with_cluster "Installing first mysql" api2 <<EOF
@@ -168,15 +166,7 @@ chef-client
 EOF
 
 # setup the role list for api
-case "$PACKAGE_COMPONENT" in
-essex-final) role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[nova-volume],role[glance-registry]"
-             ;;
-folsom)      role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
-             ;;
-*)           echo "WARNING!  UNKNOWN PACKAGE_COMPONENT ($PACKAGE_COMPONENT)"
-             exit 100
-             ;;
-esac
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
 
 # skip collectd and graphite on rhel based systems for now.  It is just broke
 if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
@@ -191,10 +181,7 @@ chef-client
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
-if [ $PACKAGE_COMPONENT = "folsom" ] ;then
-    role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
-fi
+role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 
 role_add chef-server api2 "$role_list"
 role_add chef-server compute1 "role[single-compute]"
@@ -247,10 +234,7 @@ collect_tasks
 retval=0
 
 # setup test list
-declare -a testlist=(nova glance swift keystone glance-swift)
-if [ ${PACKAGE_COMPONENT} = "folsom" ]; then
-    testlist=("cinder" "${testlist[@]}")
-fi
+declare -a testlist=(cinder nova glance swift keystone glance-swift)
 
 # run tests
 if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
