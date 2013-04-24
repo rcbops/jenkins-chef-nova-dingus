@@ -166,7 +166,7 @@ chef-client
 EOF
 
 # setup the role list for api
-role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
+role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-conductor],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
 
 # skip collectd and graphite on rhel based systems for now.  It is just broke
 if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
@@ -181,7 +181,7 @@ chef-client
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
+role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
 
 role_add chef-server api2 "$role_list"
 role_add chef-server compute1 "role[single-compute]"
