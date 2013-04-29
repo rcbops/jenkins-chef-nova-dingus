@@ -286,6 +286,7 @@ function install_chef_client() {
     if [[ ${CHEF_CLIENT_VERSION} != "LATEST" ]]; then
         BASH_EXTRA_ARGS="-s - -v ${CHEF_CLIENT_VERSION}"
     fi
+    echo "grabbing chef-client with arguments \"${BASH_EXTRA_ARGS}\""
     curl -skS http://www.opscode.com/chef/install.sh | /bin/bash ${BASH_EXTRA_ARGS} &
     wait $!
 }
