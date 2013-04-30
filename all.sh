@@ -174,16 +174,24 @@ if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
 fi
 
 role_add chef-server api "$role_list"
-role_add chef-server horizon "role[horizon-server]"
+role_add chef-server horizon "role[horizon-server],role[openstack-ha]"
 
 x_with_cluster "Installing api/storage nodes/horizon" api storage{1..3} horizon <<EOF
 chef-client
 EOF
 
 # setup the role list for api2
-role_list="role[base],role[cinder-api],role[glance-api],role[keystone-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server]"
-
+role_list="role[base],role[cinder-api],role[glance-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api]"
 role_add chef-server api2 "$role_list"
+x_with_cluster "Running chef on api2" api2 <<EOF
+chef-client
+EOF
+
+# re-run to discover all back ends for haproxy
+x_with_cluster "Running chef on horizon to get haproxy set up properly" horizon <<EOF
+chef-client
+EOF
+
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 
@@ -199,13 +207,6 @@ chef-client
 EOF
 
 role_add chef-server api "recipe[kong],recipe[exerstack]"
-
-# Turn on loadbalancing
-role_add chef-server horizon "role[openstack-ha]"
-
-x_with_cluster "Running chef on horizon to get haproxy set up" horizon <<EOF
-chef-client
-EOF
 
 # and now pull the rings
 x_with_cluster "All nodes - Pass 1" ${cluster[@]} <<EOF
