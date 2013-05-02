@@ -103,15 +103,15 @@ function set_package_provider() {
     elif [ $PLATFORM = "centos" ]; then
         # whack the cron jobs so they don't start on system boot
         chmod 000 /etc/cron.{d,daily,monthly,hourly,monthly}/*
-        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
-        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
-        sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
-        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel.repo
-        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo
-        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel.repo
-        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel-testing.repo
-        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
-        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
+#        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
+#        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
+#        sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
+#        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel.repo
+#        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo
+#        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel.repo
+#        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel-testing.repo
+#        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
+#        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
         yum clean all
     fi
