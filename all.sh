@@ -167,10 +167,10 @@ chef-client
 EOF
 
 # setup the role list for api
-if [ "$PACKAGE_COMPONENT" > "folsom" ]; then
-    role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-conductor],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
-else
+if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
     role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
+else
+    role_list="role[base],role[nova-setup],role[nova-network-controller],role[nova-conductor],role[nova-scheduler],role[cinder-setup],role[cinder-scheduler],role[cinder-api],role[cinder-volume],role[nova-api-os-compute],role[nova-api-ec2],role[nova-vncproxy],role[glance-registry]"
 fi
 
 # skip collectd and graphite on rhel based systems for now.  It is just broke
@@ -186,10 +186,10 @@ chef-client
 EOF
 
 # setup the role list for api2
-if [ "$PACKAGE_COMPONENT" > "folsom" ]; then
-    role_list="role[base],role[cinder-api],role[glance-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api]"
-else
+if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
     role_list="role[base],role[cinder-api],role[glance-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api]"
+else
+    role_list="role[base],role[cinder-api],role[glance-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api]"
 fi
 
 role_add chef-server api2 "$role_list"
