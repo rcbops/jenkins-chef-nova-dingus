@@ -131,7 +131,7 @@ pvcreate /dev/vdb
 vgcreate cinder-volumes /dev/vdb
 EOF
 
-role_add chef-server api2 "role[mysql-master]"
+role_add chef-server api2 "role[mysql-master],role[rsyslog-server]"
 x_with_cluster "Installing first mysql" api2 <<EOF
 chef-client
 EOF
