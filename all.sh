@@ -131,7 +131,12 @@ pvcreate /dev/vdb
 vgcreate cinder-volumes /dev/vdb
 EOF
 
-role_add chef-server api2 "role[mysql-master],role[rsyslog-server]"
+if [ "${PACKAGE_COMPONENT}" == "folsom" ] ; then
+    role_add chef-server api2 "role[mysql-master]"
+else
+    role_add chef-server api2 "role[mysql-master],role[rsyslog-server]"
+fi
+
 x_with_cluster "Installing first mysql" api2 <<EOF
 chef-client
 EOF
