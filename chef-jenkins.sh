@@ -33,6 +33,7 @@ fi
 NOCLEAN=${NOCLEAN:-0}
 DEPLOY=${DEPLOY:-0}
 GITHUB_CREDENTIALS="${GITHUB_CREDENTIALS:-${SOURCE_DIR}/files/github-credentials}"
+GIT_MASTER_URL="${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,grizzly}"
 
 declare -A TYPEMAP
 TYPEMAP[chef]=${CHEF_IMAGE}:${CHEF_FLAVOR}

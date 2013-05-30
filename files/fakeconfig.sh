@@ -6,7 +6,6 @@ set -x
 
 PLATFORM=debian
 COOKBOOK_PATH=/root
-GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks}
 COOKBOOK_OVERRIDE=""
 
 if [ -e /etc/redhat-release ]; then
