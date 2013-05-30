@@ -24,6 +24,8 @@ PRIVKEY=${PRIVKEY:-${SOURCE_DIR}/files/id_jenkins}
 KEYNAME=${KEYNAME:-jenkins}
 USE_CS=${USE_CS:-0}
 BEST_MIRROR=""
+TIMER=0
+
 if [ ${USE_CS} -eq 1 ]; then
     LOGIN=${LOGIN:-root}
     SPINUP_TIMEOUT=600
@@ -60,6 +62,17 @@ OPERANT_SERVER=""
 OPERANT_TASK=""
 PARENT_PID=$$
 declare -a FC_TASKS
+
+function start_timer() {
+    TIMER=$(date +%s)
+}
+
+function stop_timer() {
+    CUR_TIME=$(date +%s)
+    ELAPSED_TIME=$(( CUR_TIME-TIMER ))
+    print_banner "Operation took ${ELAPSED_TIME} seconds"
+    echo ""
+}
 
 # setting the NOCLEAN variable to non-zero will not clean up
 # instances if it exited in failure.
