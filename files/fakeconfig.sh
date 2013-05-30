@@ -6,7 +6,6 @@ set -x
 
 PLATFORM=debian
 COOKBOOK_PATH=/root
-GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks}
 COOKBOOK_OVERRIDE=""
 
 if [ -e /etc/redhat-release ]; then
@@ -185,6 +184,8 @@ EOF
 function checkout_cookbooks() {
     declare -a overrides
     local override
+
+    GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,grizzly}
 
     mkdir -p ${COOKBOOK_PATH}
     cd ${COOKBOOK_PATH}
