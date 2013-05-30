@@ -185,8 +185,6 @@ function checkout_cookbooks() {
     declare -a overrides
     local override
 
-    GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,grizzly}
-
     mkdir -p ${COOKBOOK_PATH}
     cd ${COOKBOOK_PATH}
 
