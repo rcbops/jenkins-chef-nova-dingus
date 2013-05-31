@@ -190,7 +190,7 @@ function print_banner() {
     local n
 
     local IFS=$'\n'
-    for n in $@; do
+    for n in $@; do 
         local temp_line_count=${#n}
         if [[ $temp_line_count -gt $max_length ]]; then
             max_length=$temp_line_count
@@ -605,7 +605,6 @@ function run_tests() {
         [keystone]="keystone.sh"
         [swift]="swift.sh"
         [cinder]="cinder-cli.sh"
-        [ceilometer]="ceilometer.sh"
     )
 
     kongtests=(
@@ -613,7 +612,6 @@ function run_tests() {
         [swift]="--swift"
         [glance-swift]="--glance-swift"
         [cinder]="--cinder"
-        [ceilometer]="--ceilometer"
     )
 
     local exerstack_tests=""
