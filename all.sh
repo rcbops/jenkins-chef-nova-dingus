@@ -13,12 +13,12 @@ init
 CHEF_ENV="bigcluster"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
-environment = ${CHEF_ENV}
+environment=${CHEF_ENV}
 INSTANCE_IMAGE=${INSTANCE_IMAGE}
 AVAILABILITY_ZONE=${AZ}
-TMPDIR = ${TMPDIR}
-GIT_PATCH_URL = ${GIT_PATCH_URL}
-GIT_MASTER_URL = ${GIT_MASTER_URL}
+TMPDIR=${TMPDIR}
+GIT_PATCH_URL=${GIT_PATCH_URL}
+GIT_MASTER_URL=${GIT_MASTER_URL}
 We are building for ${PACKAGE_COMPONENT}"
 
 rm -rf logs
