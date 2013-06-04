@@ -152,7 +152,11 @@ chef-client
 EOF
 
 # install rabbit message bus early and everywhere it is needed.
-role_add chef-server "keystone" "role[rabbitmq-server],role[keystone-setup],role[keystone-api]"
+if [ "${PACKAGE_COMPONENT}" == "folsom" ] ; then
+    role_add chef-server "keystone" "role[rabbitmq-server],role[keystone]"
+else
+    role_add chef-server "keystone" "role[rabbitmq-server],role[keystone-setup],role[keystone-api]"
+fi
 role_add chef-server "api2" "role[rabbitmq-server]"
 
 x_with_cluster "Installing rabbit/keystone on keystone, rabbit on api2" keystone api2 <<EOF
