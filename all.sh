@@ -212,8 +212,13 @@ x_with_cluster "Running chef on horizon to get haproxy set up properly" horizon 
 chef-client
 EOF
 
-role_add chef-server compute1 "role[single-compute],role[ceilometer-compute]"
-role_add chef-server compute2 "role[single-compute],role[ceilometer-compute]"
+if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
+    role_add chef-server compute1 "role[single-compute]"
+    role_add chef-server compute2 "role[single-compute]"
+else
+    role_add chef-server compute1 "role[single-compute],role[ceilometer-compute]"
+    role_add chef-server compute2 "role[single-compute],role[ceilometer-compute]"
+fi
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
@@ -255,7 +260,11 @@ collect_tasks
 retval=0
 
 # setup test list
-declare -a testlist=(ceilometer cinder nova glance swift keystone glance-swift)
+if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
+    declare -a testlist=(cinder nova glance swift keystone glance-swift)
+else
+    declare -a testlist=(ceilometer cinder nova glance swift keystone glance-swift)
+fi
 
 # run tests
 if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
