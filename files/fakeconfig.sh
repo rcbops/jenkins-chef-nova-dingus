@@ -337,7 +337,7 @@ function fetch_validation_pem() {
     local ip=$1
     mkdir -p /etc/chef
     rm -f /etc/chef/validation.pem
-    wget -nv http://${ip}:4000/validation.pem -O /etc/chef/validation.pem
+    wget -nv --no-proxy http://${ip}:4000/validation.pem -O /etc/chef/validation.pem
 }
 
 function copy_file() {
