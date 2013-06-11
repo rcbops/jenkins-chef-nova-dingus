@@ -69,6 +69,7 @@ x_with_cluster "Cluster booted.  Setting up the package providers and vpn thingy
 plumb_quantum_networks eth1
 # set_quantum_network_link_up eth2
 cleanup_metadata_routes eth0 eth1 
+fixup_hosts_file_for_quantum
 wait_for_rhn
 set_package_provider
 update_package_provider

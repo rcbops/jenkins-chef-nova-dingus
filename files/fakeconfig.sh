@@ -92,6 +92,10 @@ EOF
     ifup ${interface_name}
 }
 
+function fixup_hosts_file_for_quantum() {
+    echo "$(ip a show dev eth0 | grep "inet.*eth0" | awk '{print $2}' | cut -d '/' -f 1) ${hostname}" >> /etc/hosts
+}
+
 function set_quantum_network_link_up() {
     local interface_name=$1
     ip l s dev ${interface_name} up || :
