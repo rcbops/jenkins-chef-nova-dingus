@@ -8,11 +8,11 @@ JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
 AZ=${AZ:-nova}
 CHEF_CLIENT_VERSION=${CHEF_CLIENT_VERSION:-LATEST}
 
-# likely need overrides
-#CHEF_IMAGE=${CHEF_IMAGE:-bca4f433-f1aa-4310-8e8a-705de63ca355}
-#CHEF_IMAGE=${CHEF_IMAGE:-bafd879c-b8ab-47e3-bf2f-969c825c88ba}
+# chef-template3
 CHEF_IMAGE=${CHEF_IMAGE:-3e4a8447-a047-4dc4-a7e4-67b3cd3961c3}
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
+
+# jenkins-precise-v2
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-384fa635-d848-426f-980c-49864f1299ff}
 
 CHEF_FLAVOR=${CHEF_FLAVOR:-6}
 INSTANCE_FLAVOR=${INSTANCE_FLAVOR:-7}
@@ -62,6 +62,28 @@ OPERANT_SERVER=""
 OPERANT_TASK=""
 PARENT_PID=$$
 declare -a FC_TASKS
+
+function setup_quantum_network() {
+    if [[ ${JOBID} = "public" ]]; then
+        echo "can not create a public network"
+        exit 1
+    fi
+    quantum net-create "${JOBID}-mgmt"
+    quantum subnet-create --name "${JOBID}-mgmt" --no-gateway "${JOBID}-mgmt" 192.168.0.0/24
+    #quantum net-create "${JOBID}-vmnet"
+    #quantum subnet-create --name "${JOBID}-vmnet" --disable-dhcp --no-gateway "${JOBID}-vmnet" 192.168.1.0/24
+}
+
+function destroy_quantum_network() {
+    if [[ ${JOBID} = "public" ]]; then
+        echo "will not delete the public network"
+        exit 1
+    fi
+    quantum subnet-delete "${JOBID}-mgmt"
+    quantum net-delete "${JOBID}-mgmt"
+    #quantum subnet-delete "${JOBID}-vmnet"
+    #quantum net-delete "${JOBID}-vmnet"
+}
 
 function start_timer() {
     TIMER=$(date +%s)
@@ -115,6 +137,9 @@ function cleanup() {
 
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
         echo "We are the parent - cleaning up after the kids"
+        if [ ${NOCLEAN} -eq 0 ]; then
+            destroy_quantum_network
+        fi
         rm -rf ${TMPDIR}
     fi
     echo "Exiting with return value of ${exitval}"
@@ -240,6 +265,14 @@ function boot_and_wait() {
     echo "Booting ${name} with image ${image} using flavor ${flavor} on PID $$"
     if [ $USE_CS -eq 0 ]; then
         extra_flags="--key_name=${KEYNAME}"
+        QUANTUM_PUBLIC_UUID=$(quantum subnet-show public | awk '{if($2=="network_id") print $4}')
+        QUANTUM_MGMT_SUBNET_UUID=$(quantum subnet-show "${JOBID}-mgmt" | awk '{if($2=="network_id") print $4}')
+        #QUANTUM_VMNET_SUBNET_UUID=$(quantum subnet-show "${JOBID}-vmnet" | awk '{if($2=="network_id") print $4}')
+        extra_flags=${extra_flags}" --nic net-id=${QUANTUM_PUBLIC_UUID}"
+        if [[ ${friendly_name} != "chef-server" ]]; then
+            #extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID} --nic net-id=${QUANTUM_VMNET_SUBNET_UUID} --config-drive=true"
+            extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID} --config-drive=true"
+        fi
     else
         local key_source=${SOURCE_DIR}/file/authorized_keys
         if [ ! -e ${key_source} ]; then
@@ -252,8 +285,6 @@ function boot_and_wait() {
         LOGIN="root"
     fi
 
-    # omfg this is so full of fail.  folsom api likes to return an epic 143 error someplace near here and
-    # it is making me sad.
     nova boot --flavor=${flavor} --image=${image} --availability_zone ${AZ} ${extra_flags} ${name} > /dev/null 2>&1 || :
 
     local count=0
@@ -634,12 +665,7 @@ function run_tests() {
         kong_tests+="${kongtests[${d}]:-} "
     done
 
-    if [[ ! $INSTANCE_IMAGE = "jenkins-precise" ]]; then
-        echo "Sleep for 1 Shep to let CentOS catch up"
-        sleep 30s
-    fi
-
-    x_with_server "running tests" ${server} <<-EOF
+    x_with_server "running integration tests" ${server} <<-EOF
         cd /opt/exerstack
         ONESHOT=1 ./exercise.sh ${version} ${exerstack_tests}
 

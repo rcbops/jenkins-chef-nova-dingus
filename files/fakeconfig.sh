@@ -72,6 +72,27 @@ function wait_for_rhn() {
     fi
 }
 
+function plumb_quantum_networks() {
+    local interface_name=$1
+    cat >> /etc/network/interfaces <<EOF
+auto ${interface_name}
+iface ${interface_name} inet dhcp
+EOF
+    ifup ${interface_name}
+}
+
+function set_quantum_network_link_up() {
+    local interface_name=$1
+    ip l s dev ${interface_name} up
+}
+
+function cleanup_metadata_routes() {
+    # remove the metadata route from eth0 after we've got the instance up
+    for eth_dev in "$@"; do
+      ip r d 169.254.169.254 dev $eth_dev
+    done
+}
+
 function add_repo() {
     # $1 repo description
 
@@ -387,13 +408,21 @@ function flush_iptables() {
     iptables -P OUTPUT ACCEPT
 }
 
-function fix_for_tests() {
-
+function fix_for_tests_quantum() {
     if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
         install_package "swift"
     elif [ $PLATFORM = "redhat" ] || [ $PLATFORM = "centos" ]; then
         install_package "openstack-swift"
     fi
+    ip addr add 192.168.1.254/24 dev eth2 || true
+}
 
+function fix_for_tests() {
+    # add a couple packages and install the route for the bridge when using gre tunnelling
+    if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
+        install_package "swift"
+    elif [ $PLATFORM = "redhat" ] || [ $PLATFORM = "centos" ]; then
+        install_package "openstack-swift"
+    fi
     ip addr add 192.168.100.254/24 dev br99 || true
 }

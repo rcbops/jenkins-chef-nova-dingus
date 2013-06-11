@@ -2,7 +2,6 @@
 
 
 START_TIME=$(date +%s)
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 
 source $(dirname $0)/chef-jenkins.sh
@@ -10,7 +9,7 @@ source $(dirname $0)/chef-jenkins.sh
 print_banner "Initializing Job"
 init
 
-CHEF_ENV="bigcluster"
+CHEF_ENV="minicluster"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
@@ -28,7 +27,11 @@ BASH_XTRACEFD=9
 set -x
 
 declare -a cluster
-cluster=(api api2 compute1 compute2)
+cluster=(api compute1 compute2)
+
+start_timer
+setup_quantum_network
+stop_timer
 
 start_timer
 print_banner "creating chef server"
@@ -64,7 +67,10 @@ wait_for_cluster_ssh_key ${cluster[@]}
 stop_timer
 
 start_timer
-x_with_cluster "Cluster booted.  Setting up the VPN thing." ${cluster[@]} <<EOF
+x_with_cluster "Cluster booted.  Setting up the package providers and vpn thingy..." ${cluster[@]} <<EOF
+plumb_quantum_networks eth1
+# set_quantum_network_link_up eth2
+cleanup_metadata_routes eth0 eth1 
 wait_for_rhn
 set_package_provider
 update_package_provider
@@ -81,39 +87,6 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable (not really needed in grizzly but no matter)
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
-# Define vrrp ips
-api_vrrp_ip=$(ip_for_host api | awk 'BEGIN{FS="."};{print "10.127.54."$4}')
-db_vrrp_ip=$(ip_for_host api2 | awk 'BEGIN{FS="."};{print "10.127.54."$4}')
-rabbitmq_vrrp_ip=$(ip_for_host compute1 | awk 'BEGIN{FS="."};{print "10.127.54."$4}')
-print_banner "VRRP configuration:
-API   : ${api_vrrp_ip}
-DB    : ${db_vrrp_ip}
-RABBIT: ${rabbitmq_vrrp_ip}"
-
-# add the lb service vips to the environment
-knife exec -E "@e=Chef::Environment.load('${CHEF_ENV}'); a=@e.override_attributes; \
-a['vips']['horizon-dash_ssl']='${api_vrrp_ip}';
-a['vips']['horizon-dash']='${api_vrrp_ip}';
-a['vips']['nova-api']='${api_vrrp_ip}';
-a['vips']['nova-ec2-public']='${api_vrrp_ip}';
-a['vips']['nova-novnc-proxy']='${api_vrrp_ip}';
-a['vips']['nova-xvpvnc-proxy']='${api_vrrp_ip}';
-a['vips']['keystone-service-api']='${api_vrrp_ip}';
-a['vips']['keystone-admin-api']='${api_vrrp_ip}';
-a['vips']['cinder-api']='${api_vrrp_ip}';
-a['vips']['glance-api']='${api_vrrp_ip}';
-a['vips']['glance-registry']='${api_vrrp_ip}';
-a['vips']['swift-proxy']='${api_vrrp_ip}';
-a['vips']['rabbitmq-queue']='${rabbitmq_vrrp_ip}';
-a['vips']['mysql-db']='${db_vrrp_ip}';
-@e.override_attributes(a); @e.save" -c ${TMPDIR}/chef/chef-server/knife.rb
-
-# Disable glance image_uploading
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
-
-# add the clients to the chef server
-add_chef_clients chef-server ${cluster[@]}
-stop_timer
 
 start_timer
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
@@ -137,34 +110,19 @@ vgcreate cinder-volumes /dev/vdb
 EOF
 stop_timer
 
-start_timer
-role_add chef-server api "role[ha-controller1],role[cinder-volume]"
-x_with_cluster "Installing first controller" api <<EOF
-chef-client
-EOF
-stop_timer
-
-start_timer
-role_add chef-server api2 "role[ha-controller2]"
-x_with_cluster "Installing second controller" api2 <<EOF
-chef-client
-EOF
-stop_timer
-
-start_timer
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
-role_add chef-server api "recipe[kong],recipe[exerstack]"
-x_with_cluster "Finalizing api" api <<EOF
+
+start_timer
+role_add chef-server api "role[single-controller],role[cinder-volume]"
+x_with_cluster "Installing the controller" api <<EOF
 chef-client
 EOF
 stop_timer
 
+start_timer
+role_add chef-server api "recipe[kong],recipe[exerstack]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
-
-start_timer
-# run the proxy to generate the ring, now that we
-# have discovered disks (ephemeral0)
 x_with_cluster "Running chef on all nodes" ${cluster[@]} <<EOF
 chef-client
 EOF
@@ -181,7 +139,7 @@ stop_timer
 retval=0
 
 # setup test list
-declare -a testlist=(cinder nova glance swift keystone glance-swift)
+declare -a testlist=(cinder nova glance keystone)
 
 start_timer
 # run tests
@@ -216,6 +174,10 @@ stop_timer
 #        echo "skipping building comment"
 ##    fi
 #fi
+
+start_timer
+destroy_quantum_network
+stop_timer
 
 END_TIME=$(date +%s)
 print_banner "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
