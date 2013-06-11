@@ -74,10 +74,21 @@ function wait_for_rhn() {
 
 function plumb_quantum_networks() {
     local interface_name=$1
-    cat >> /etc/network/interfaces <<EOF
+    if [ ${PLATFORM} = "debian" ]; then
+        cat >> /etc/network/interfaces <<EOF
 auto ${interface_name}
 iface ${interface_name} inet dhcp
 EOF
+    else
+        cat >> /etc/sysconfig/network-scripts/ifcfg-${interface_name}
+DEVICE="${interface_name}"
+ONBOOT="yes"
+BOOTPROTO="dhcp"
+IPV6INIT="no"
+MTU="1500"
+NM_CONTROLLED="no"
+EOF
+    fi
     ifup ${interface_name}
 }
 
