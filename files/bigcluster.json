@@ -85,11 +85,11 @@
             "root_network_acl": "10.%"
         },
         "osops_networks": {
-            "management": "10.127.53.0/24",
-            "nova": "10.0.0.0/8",
-            "swift": "10.0.0.0/8",
-            "swift-lb": "10.0.0.0/8",
-            "public": "10.0.0.0/8"
+            "management": "192.168.0.0/24",
+            "nova": "192.168.0.0/24",
+            "swift": "192.168.0.0/24",
+            "swift-lb": "192.168.0.0/24",
+            "public": "192.168.0.0/24"
         }
     },
     "name": "bigcluster",
