@@ -80,7 +80,7 @@ auto ${interface_name}
 iface ${interface_name} inet dhcp
 EOF
     else
-        cat >> /etc/sysconfig/network-scripts/ifcfg-${interface_name}
+        cat >> /etc/sysconfig/network-scripts/ifcfg-${interface_name} <<EOF
 DEVICE="${interface_name}"
 ONBOOT="yes"
 BOOTPROTO="dhcp"
