@@ -94,13 +94,13 @@ EOF
 
 function set_quantum_network_link_up() {
     local interface_name=$1
-    ip l s dev ${interface_name} up
+    ip l s dev ${interface_name} up || :
 }
 
 function cleanup_metadata_routes() {
     # remove the metadata route from eth0 after we've got the instance up
     for eth_dev in "$@"; do
-      ip r d 169.254.169.254 dev $eth_dev
+      ip r d 169.254.169.254 dev $eth_dev || :
     done
 }
 
