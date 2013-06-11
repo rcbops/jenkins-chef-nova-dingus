@@ -93,7 +93,7 @@ EOF
 }
 
 function fixup_hosts_file_for_quantum() {
-    echo "$(ip a show dev eth0 | grep "inet.*eth0" | awk '{print $2}' | cut -d '/' -f 1) ${hostname}" >> /etc/hosts
+    echo "$(ip a show dev eth0 | grep "inet.*eth0" | awk '{print $2}' | cut -d '/' -f 1) ${hostname} ${hostname}.novalocal" >> /etc/hosts
 }
 
 function set_quantum_network_link_up() {
