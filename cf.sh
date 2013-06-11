@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
+INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise-v2}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
 
 source $(dirname $0)/chef-jenkins.sh
@@ -127,7 +127,7 @@ folsom)      role_list+=",role[cinder-all]"
 esac
 
 # skip collectd and graphite on rhel based systems for now.  It is just broke
-if [ ${INSTANCE_IMAGE} = "jenkins-precise" ]; then
+if [ ${INSTANCE_IMAGE} = "jenkins-precise-v2" ]; then
     role_list+=",role[collectd-client],role[collectd-server],role[graphite]"
 fi
 

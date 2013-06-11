@@ -10,6 +10,18 @@
         "horizon": {
           "theme": "Rackspace"
         },
+        "vips": {
+          "nova-api": "192.168.0.240",
+          "nova-ec2-public": "192.168.0.240",
+          "keystone-service-api": "192.168.0.240",
+          "keystone-admin-api": "192.168.0.240",
+          "cinder-api": "192.168.0.240",
+          "glance-api": "192.168.0.240",
+          "glance-registry": "192.168.0.240",
+          "swift-proxy": "192.168.0.240",
+          "rabbitmq-queue": "192.168.0.241",
+          "mysql-db": "192.168.0.242"
+        },
         "osops": {
             "apply_patches": true
         },

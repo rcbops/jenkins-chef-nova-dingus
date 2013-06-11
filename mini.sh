@@ -53,9 +53,7 @@ run_twice upload_cookbooks
 run_twice upload_roles
 EOF
 background_task "fc_do"
-stop_timer
 
-start_timer
 boot_cluster ${cluster[@]}
 stop_timer
 
@@ -86,7 +84,7 @@ print_banner "Setting up the chef environment"
 create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable (not really needed in grizzly but no matter)
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
-
+stop_timer
 
 start_timer
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
