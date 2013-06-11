@@ -167,17 +167,13 @@ cluster_fetch_file "/var/log/syslog" ./logs ${cluster[@]}
 cluster_fetch_file "/etc/{nova,glance,keystone,cinder,swift}/*" ./logs/config ${cluster[@]}
 stop_timer
 
-#if [ $retval -eq 0 ]; then
-#    if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
-#        github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO (${INSTANCE_IMAGE})\n * ${BUILD_URL}consoleFull : SUCCESS"
-#    else
-#        echo "skipping building comment"
-##    fi
-#fi
-
-start_timer
-destroy_quantum_network
-stop_timer
+if [ $retval -eq 0 ]; then
+    if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
+        github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO (${INSTANCE_IMAGE})\n * ${BUILD_URL}consoleFull : SUCCESS"
+    else
+        echo "skipping building comment"
+    fi
+fi
 
 END_TIME=$(date +%s)
 print_banner "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
