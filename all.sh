@@ -4,6 +4,7 @@
 START_TIME=$(date +%s)
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-essex-final}
+GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,${PACKAGE_COMPONENT}}
 
 source $(dirname $0)/chef-jenkins.sh
 
@@ -13,12 +14,12 @@ init
 CHEF_ENV="bigcluster"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
-environment = ${CHEF_ENV}
+environment=${CHEF_ENV}
 INSTANCE_IMAGE=${INSTANCE_IMAGE}
 AVAILABILITY_ZONE=${AZ}
-TMPDIR = ${TMPDIR}
-GIT_PATCH_URL = ${GIT_PATCH_URL}
-GIT_MASTER_URL = ${GIT_MASTER_URL}
+TMPDIR=${TMPDIR}
+GIT_PATCH_URL=${GIT_PATCH_URL}
+GIT_MASTER_URL=${GIT_MASTER_URL}
 We are building for ${PACKAGE_COMPONENT}"
 
 rm -rf logs
@@ -131,7 +132,12 @@ pvcreate /dev/vdb
 vgcreate cinder-volumes /dev/vdb
 EOF
 
-role_add chef-server api2 "role[mysql-master],role[rsyslog-server]"
+if [ "${PACKAGE_COMPONENT}" == "folsom" ] ; then
+    role_add chef-server api2 "role[mysql-master]"
+else
+    role_add chef-server api2 "role[mysql-master],role[rsyslog-server]"
+fi
+
 x_with_cluster "Installing first mysql" api2 <<EOF
 chef-client
 EOF
@@ -146,7 +152,11 @@ chef-client
 EOF
 
 # install rabbit message bus early and everywhere it is needed.
-role_add chef-server "keystone" "role[rabbitmq-server],role[keystone-setup],role[keystone-api]"
+if [ "${PACKAGE_COMPONENT}" == "folsom" ] ; then
+    role_add chef-server "keystone" "role[rabbitmq-server],role[keystone]"
+else
+    role_add chef-server "keystone" "role[rabbitmq-server],role[keystone-setup],role[keystone-api]"
+fi
 role_add chef-server "api2" "role[rabbitmq-server]"
 
 x_with_cluster "Installing rabbit/keystone on keystone, rabbit on api2" keystone api2 <<EOF
@@ -189,7 +199,7 @@ EOF
 if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
     role_list="role[base],role[cinder-api],role[glance-api],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api]"
 else
-    role_list="role[base],role[cinder-api],role[glance-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api]"
+    role_list="role[base],role[cinder-api],role[glance-api],role[nova-conductor],role[nova-scheduler],role[nova-api-os-compute],role[nova-api-ec2],role[swift-proxy-server],role[keystone-api],role[ceilometer-setup],role[ceilometer-api],role[ceilometer-central-agent],role[ceilometer-collector]"
 fi
 
 role_add chef-server api2 "$role_list"
@@ -202,8 +212,13 @@ x_with_cluster "Running chef on horizon to get haproxy set up properly" horizon 
 chef-client
 EOF
 
-role_add chef-server compute1 "role[single-compute]"
-role_add chef-server compute2 "role[single-compute]"
+if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
+    role_add chef-server compute1 "role[single-compute]"
+    role_add chef-server compute2 "role[single-compute]"
+else
+    role_add chef-server compute1 "role[single-compute],role[ceilometer-compute]"
+    role_add chef-server compute2 "role[single-compute],role[ceilometer-compute]"
+fi
 
 # run the proxy to generate the ring, now that we
 # have discovered disks (ephemeral0)
@@ -245,7 +260,11 @@ collect_tasks
 retval=0
 
 # setup test list
-declare -a testlist=(cinder nova glance swift keystone glance-swift)
+if [ "$PACKAGE_COMPONENT" == "folsom" ]; then
+    declare -a testlist=(cinder nova glance swift keystone glance-swift)
+else
+    declare -a testlist=(ceilometer cinder nova glance swift keystone glance-swift)
+fi
 
 # run tests
 if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
