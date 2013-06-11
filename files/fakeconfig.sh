@@ -147,7 +147,7 @@ function set_package_provider() {
         yum clean all
     fi
     echo "proxy=${JENKINS_PROXY}" >> /root/.curlrc
-    echo "http_proxy = ${JENINS_PROXY}" >> /root/.wgetrc
+    echo "http_proxy = ${JENKINS_PROXY}" >> /root/.wgetrc
     echo "use_proxy = on" >> /root/.wgetrc
 }
 
