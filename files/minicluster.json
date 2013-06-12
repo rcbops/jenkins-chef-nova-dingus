@@ -69,7 +69,7 @@
         },
         "mysql": {
             "allow_remote_root": true,
-            "root_network_acl": "192.168.0.%"
+            "root_network_acl": "%"
         },
         "osops_networks": {
             "management": "192.168.0.0/24",
