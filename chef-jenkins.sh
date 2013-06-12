@@ -292,7 +292,7 @@ function boot_and_wait() {
     local SLEEP_TIMER=2
 
     while [ "$ip" = "" ] && (( count < ${NETWORK_SPINUP_TIMEOUT:-60} )); do
-        echo "waiting for instance to come onlie: count=${count} SLEEP_TIMER=${SLEEP_TIMER}"
+        echo "waiting for instance to come online: count=${count} SLEEP_TIMER=${SLEEP_TIMER}"
         sleep ${SLEEP_TIMER}
 
         ip=$(nova show ${name} | grep "${ACCESS_NETWORK} network" | cut -d'|' -f3 | tr -d ' ' | tr , '\n' | egrep '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || :)
