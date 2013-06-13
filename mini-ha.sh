@@ -160,13 +160,13 @@ declare -a testlist=(cinder nova glance keystone)
 
 
 start_timer
-x_with_server "running exerstack on api" <<-EOF
+x_with_server "running exerstack on api" api <<-EOF
 cd /opt/exerstack
 ONESHOT=1 ./exercise.sh ${PACKAGE_COMPONENT} cinder-cli.sh euca.sh nova-cli.sh glance.sh keystone.sh
 EOF
 background_task "fc_do"
 
-x_with_server "running kong on api2" <<-EOF
+x_with_server "running kong on api2" api2 <<-EOF
 cd /opt/kong
 ONESHOT=1 ./run_tests.sh --version --cinder --nova 
 EOF
