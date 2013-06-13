@@ -49,9 +49,7 @@
             }
         },
         "nova": {
-            "config": {
-                "log_verbosity": "DEBUG"
-            },
+            "debug": true,
             "network": {
                 "multi_host": true
             },

@@ -435,11 +435,12 @@ function fix_for_tests_quantum() {
 }
 
 function fix_for_tests() {
+    local IP=${1:-192.168.100.254}
     # add a couple packages and install the route for the bridge when using gre tunnelling
     if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
         install_package "swift"
     elif [ $PLATFORM = "redhat" ] || [ $PLATFORM = "centos" ]; then
         install_package "openstack-swift"
     fi
-    ip addr add 192.168.100.254/24 dev br99 || true
+    ip addr add ${IP}/24 dev br99 || true
 }
