@@ -141,7 +141,9 @@ function cleanup() {
         if [ ${NOCLEAN} -eq 0 ]; then
             destroy_quantum_network
         fi
-        rm -rf ${TMPDIR}
+        if [ ${NOCLEAN} -eq 0 ]; then
+            rm -rf ${TMPDIR}
+        fi
     fi
     echo "Exiting with return value of ${exitval}"
     exit ${exitval}
