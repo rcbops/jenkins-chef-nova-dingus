@@ -134,7 +134,7 @@
         },
         "mysql": {
             "allow_remote_root": true,
-            "root_network_acl": "%"
+            "root_network_acl": "%",
             "ha": {
                 "vrid": 10
             }
