@@ -15,12 +15,17 @@
           "nova-ec2-public": "192.168.0.240",
           "keystone-service-api": "192.168.0.240",
           "keystone-admin-api": "192.168.0.240",
+          "keystone-internal-api": "192.168.0.240",
           "cinder-api": "192.168.0.240",
           "glance-api": "192.168.0.240",
           "glance-registry": "192.168.0.240",
           "swift-proxy": "192.168.0.240",
           "rabbitmq-queue": "192.168.0.241",
-          "mysql-db": "192.168.0.242"
+          "mysql-db": "192.168.0.242",
+          "nova-novnc-proxy": "192.168.0.240",
+          "horizon-dash": "192.168.0.240",
+          "horizon-dash_ssl": "192.168.0.240",
+          "nova-xvpvnc-proxy": "192.168.0.240"
         },
         "swift": {
             "use_informant": false,

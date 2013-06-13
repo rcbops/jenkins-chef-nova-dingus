@@ -109,8 +109,6 @@ vgcreate cinder-volumes /dev/vdb
 EOF
 stop_timer
 
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
-
 start_timer
 role_add chef-server api "role[ha-controller1],role[cinder-volume]"
 x_with_cluster "Installing the controller" api <<EOF
@@ -125,15 +123,7 @@ chef-client
 EOF
 stop_timer
 
-start_timer
-x_with_cluster "Finishing up the HA config on api" api <<EOF
-chef-client
-EOF
-stop_timer
-
-start_timer
-role_add chef-server api "recipe[kong]"
-role_add chef-server api2 "recipe[exerstack]"
+role_add chef-server api "recipe[kong],recipe[exerstack]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 x_with_cluster "Running chef on all nodes" ${cluster[@]} <<EOF
@@ -157,23 +147,6 @@ retval=0
 
 # setup test list
 declare -a testlist=(cinder nova glance keystone)
-
-
-start_timer
-x_with_server "running exerstack on api" api <<-EOF
-cd /opt/exerstack
-ONESHOT=1 ./exercise.sh ${PACKAGE_COMPONENT} cinder-cli.sh euca.sh nova-cli.sh glance.sh keystone.sh
-EOF
-background_task "fc_do"
-
-x_with_server "running kong on api2" api2 <<-EOF
-cd /opt/kong
-ONESHOT=1 ./run_tests.sh --version --cinder --nova 
-EOF
-background_task "fc_do"
-collect_tasks
-stop_timer
-
 
 start_timer
 # run tests

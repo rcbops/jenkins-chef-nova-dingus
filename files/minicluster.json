@@ -62,7 +62,7 @@
             ]
         },
         "glance": {
-            "image_upload": false,
+            "image_upload": true,
             "api": {
                 "default_store": "file"
             },
