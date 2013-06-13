@@ -68,6 +68,7 @@
             "ceilometer-api": {
               "vrid": 12
             }
+          }
         },
         "rabbitmq": {
           "ha": {
