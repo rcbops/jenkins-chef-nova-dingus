@@ -29,43 +29,43 @@
         },
         "ha": {
           "available_services": {
-            "keystone-admin-api" {
+            "keystone-admin-api": {
               "vrid": 12
             },
-            "keystone-service-api" {
+            "keystone-service-api": {
               "vrid": 12
             },
-            "nova-api" {
+            "nova-api": {
               "vrid": 12
             },
-            "nova-ec2-public" {
+            "nova-ec2-public": {
               "vrid": 12
             },
-            "cinder-api" {
+            "cinder-api": {
               "vrid": 12
             },
-            "glance-api" {
+            "glance-api": {
               "vrid": 12
             },
-            "swift-proxy" {
+            "swift-proxy": {
               "vrid": 12
             },
-            "glance-registry" {
+            "glance-registry": {
               "vrid": 12
             },
-            "nova-novnc-proxy" {
+            "nova-novnc-proxy": {
               "vrid": 12
             },
-            "nova-xvpvnc-proxy" {
+            "nova-xvpvnc-proxy": {
               "vrid": 12
             },
-            "horizon-dash" {
+            "horizon-dash": {
               "vrid": 12
             },
-            "horizon-dash_ssl" {
+            "horizon-dash_ssl": {
               "vrid": 12
             },
-            "ceilometer-api" {
+            "ceilometer-api": {
               "vrid": 12
             }
         },
