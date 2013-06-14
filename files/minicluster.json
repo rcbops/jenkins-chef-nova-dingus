@@ -27,54 +27,6 @@
           "horizon-dash_ssl": "192.168.0.240",
           "nova-xvpvnc-proxy": "192.168.0.240"
         },
-        "ha": {
-          "available_services": {
-            "keystone-admin-api": {
-              "vrid": 12
-            },
-            "keystone-service-api": {
-              "vrid": 12
-            },
-            "nova-api": {
-              "vrid": 12
-            },
-            "nova-ec2-public": {
-              "vrid": 12
-            },
-            "cinder-api": {
-              "vrid": 12
-            },
-            "glance-api": {
-              "vrid": 12
-            },
-            "swift-proxy": {
-              "vrid": 12
-            },
-            "glance-registry": {
-              "vrid": 12
-            },
-            "nova-novnc-proxy": {
-              "vrid": 12
-            },
-            "nova-xvpvnc-proxy": {
-              "vrid": 12
-            },
-            "horizon-dash": {
-              "vrid": 12
-            },
-            "horizon-dash_ssl": {
-              "vrid": 12
-            },
-            "ceilometer-api": {
-              "vrid": 12
-            }
-          }
-        },
-        "rabbitmq": {
-          "ha": {
-              "vrid": 11
-          }
-        },
         "osops": {
             "apply_patches": true
         },
@@ -120,10 +72,7 @@
         },
         "mysql": {
             "allow_remote_root": true,
-            "root_network_acl": "%",
-            "ha": {
-                "vrid": 10
-            }
+            "root_network_acl": "%"
         },
         "osops_networks": {
             "management": "192.168.0.0/24",
