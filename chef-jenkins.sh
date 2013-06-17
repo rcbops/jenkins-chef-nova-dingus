@@ -9,7 +9,8 @@ AZ=${AZ:-nova}
 CHEF_CLIENT_VERSION=${CHEF_CLIENT_VERSION:-LATEST}
 
 # chef-template3
-CHEF_IMAGE=${CHEF_IMAGE:-3e4a8447-a047-4dc4-a7e4-67b3cd3961c3}
+#CHEF_IMAGE=${CHEF_IMAGE:-3e4a8447-a047-4dc4-a7e4-67b3cd3961c3}
+CHEF_IMAGE=${CHEF_IMAGE:-213bf9a8-877f-4abb-b67c-af86b5f2f8be}
 
 # jenkins-precise-v2
 INSTANCE_IMAGE=${INSTANCE_IMAGE:-384fa635-d848-426f-980c-49864f1299ff}
@@ -271,10 +272,10 @@ function boot_and_wait() {
         QUANTUM_PUBLIC_UUID=$(quantum subnet-show public | awk '{if($2=="network_id") print $4}')
         QUANTUM_MGMT_SUBNET_UUID=$(quantum subnet-show "${JOBID}-mgmt" | awk '{if($2=="network_id") print $4}')
         #QUANTUM_VMNET_SUBNET_UUID=$(quantum subnet-show "${JOBID}-vmnet" | awk '{if($2=="network_id") print $4}')
-        extra_flags=${extra_flags}" --nic net-id=${QUANTUM_PUBLIC_UUID}"
+        extra_flags=${extra_flags}" --config-drive=true --nic net-id=${QUANTUM_PUBLIC_UUID}"
         if [[ ${friendly_name} != "chef-server" ]]; then
             #extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID} --nic net-id=${QUANTUM_VMNET_SUBNET_UUID} --config-drive=true"
-            extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID} --config-drive=true"
+            extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID}"
         fi
     else
         local key_source=${SOURCE_DIR}/file/authorized_keys

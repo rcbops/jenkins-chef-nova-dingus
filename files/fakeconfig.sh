@@ -234,12 +234,29 @@ function checkout_cookbooks() {
     local master_repo=${master_info[0]}
     local master_branch=${master_info[1]:-grizzly}
 
-    git clone ${master_repo}
+    if [[ ${GIT_MASTER_URL} =~ "https://github.com/rcbops/chef-cookbooks" ]]; then
+      echo "using the cached repo"
+    else
+      echo " we are looking at a different repo, so we can't use the one we have cached"
+      rm -rf /root/chef-cookbooks
+    fi
 
-    mkdir -p chef-cookbooks
-    cd chef-cookbooks
-    git checkout ${master_branch}
-    git submodule init
+    if [[ -d /root/chef-cookbooks ]]; then
+      cd chef-cookbooks
+      git fetch origin
+      git checkout ${master_branch}
+      git clean -ffdx
+      git pull origin ${master_branch}
+      git submodule init
+      git submodule sync
+    else
+      git clone ${master_repo}
+
+      mkdir -p chef-cookbooks
+      cd chef-cookbooks
+      git checkout ${master_branch}
+      git submodule init
+    fi
 
     # github, y u no work?
     local count=1
