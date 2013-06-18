@@ -45,9 +45,9 @@ set_package_provider
 update_package_provider
 flush_iptables
 run_twice install_package git-core
-start_chef_services
-rabbitmq_fixup
-chef_fixup
+#start_chef_services
+#rabbitmq_fixup
+chef11_fixup
 run_twice checkout_cookbooks
 run_twice upload_cookbooks
 run_twice upload_roles
@@ -91,7 +91,7 @@ start_timer
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 flush_iptables
 install_chef_client
-fetch_validation_pem $(ip_for_host chef-server)
+chef11_fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
 chef-client

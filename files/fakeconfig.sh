@@ -198,6 +198,10 @@ function rabbitmq_fixup() {
 }
 
 
+function chef11_fixup() {
+    chef-server-ctl reconfigure
+}
+
 function chef_fixup() {
     cat > ${HOME}/.chef/knife.rb <<EOF
 log_level                :info
@@ -352,6 +356,14 @@ function swap_apt_source() {
     # $1 - new mirror (not mirror.rackspace.com)
     #
     sed -i /etc/apt/sources.list -e "s/mirror.rackspace.com/${1}/g"
+}
+
+function chef11_fetch_validation_pem() {
+    # $1 - IP of chef server
+    local ip=$1
+    mkdir -p /etc/chef
+    rm -f /etc/chef/validation.pem
+    wget -nv --no-proxy http://${ip}:4000/docs/chef-validator.pem -O /etc/chef/validation.pem
 }
 
 function fetch_validation_pem() {
