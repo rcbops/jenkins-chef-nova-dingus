@@ -199,6 +199,7 @@ function rabbitmq_fixup() {
 
 
 function chef11_fixup() {
+    sed -i 's/chef-server/'$(hostname)'.novalocal/g' /etc/chef-server/chef-server.rb
     chef-server-ctl reconfigure
 }
 
@@ -321,8 +322,7 @@ function upload_cookbooks() {
 
 function upload_roles() {
     cd ${COOKBOOK_PATH}/chef-cookbooks
-
-    rake roles
+    knife role from file roles/*.rb
 }
 
 function install_chef_client() {

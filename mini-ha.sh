@@ -40,17 +40,14 @@ wait_for_ssh chef-server
 stop_timer
 
 start_timer
-x_with_server "Uploading cookbooks and booting the cluster" "chef-server" <<EOF
+x_with_server "Fixing up the chef-server and booting the cluster" "chef-server" <<EOF
 set_package_provider
 update_package_provider
 flush_iptables
 run_twice install_package git-core
-start_chef_services
-rabbitmq_fixup
-chef_fixup
+fixup_hosts_file_for_quantum
+chef11_fixup
 run_twice checkout_cookbooks
-run_twice upload_cookbooks
-run_twice upload_roles
 EOF
 background_task "fc_do"
 
@@ -65,6 +62,12 @@ wait_for_cluster_ssh_key ${cluster[@]}
 stop_timer
 
 start_timer
+x_with_server "uploading the cookbooks" "chef-server" <<EOF
+run_twice upload_cookbooks
+run_twice upload_roles
+EOF
+background_task "fc_do"
+
 x_with_cluster "Cluster booted.  Setting up the package providers and vpn thingy..." ${cluster[@]} <<EOF
 plumb_quantum_networks eth1
 # set_quantum_network_link_up eth2
@@ -91,7 +94,7 @@ start_timer
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 flush_iptables
 install_chef_client
-fetch_validation_pem $(ip_for_host chef-server)
+chef11_fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
 chef-client
@@ -141,6 +144,20 @@ fix_for_tests 192.168.100.253
 EOF
 background_task "fc_do"
 collect_tasks
+stop_timer
+
+start_timer
+# TODO(breu): this needs to get removed
+if [[ ${PACKAGE_COMPONENT} = "folsom" ]]; then
+  echo "this is your folsom.  there is no other folsom like it."
+  echo "stopping glance-registry and glance-api on api2"
+  x_with_server "stopping glance services on second node" api2 <<EOF
+    monit stop glance-api
+    monit stop glance-registry
+EOF
+  background_task "fc_do"
+  collect_tasks
+fi
 stop_timer
 
 retval=0

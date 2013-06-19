@@ -547,6 +547,30 @@ function collect_tasks() {
     return ${failcount}
 }
 
+function chef11_prepare_chef() {
+    # $1 - server
+    local server=$1
+
+    if [ ! -e ${TMPDIR}/chef/${server} ]; then
+        mkdir -p ${TMPDIR}/chef/${server}/checksums
+        wget -nv http://$(ip_for_host ${server}):4000/docs/chef-validator.pem -O ${TMPDIR}/chef/${server}/validation.pem
+        wget -nv http://$(ip_for_host ${server}):4000/docs/admin.pem -O ${TMPDIR}/chef/${server}/admin.pem
+
+        # cp ${SOURCE_DIR}/files/{chefadmin,validation}.pem ${TMPDIR}/chef/${server}
+        cat > ${TMPDIR}/chef/${server}/knife.rb <<-EOF
+            log_level                :info
+            log_location             "/tmp/foo.txt"
+            node_name                "admin"
+            client_key               "${TMPDIR}/chef/${server}/admin.pem"
+            validation_client_name   "chef-validator"
+            validation_key           "${TMPDIR}/chef/${server}/validation.pem"
+            chef_server_url          "http://$(ip_for_host ${server}):4000"
+            cache_type               'BasicFile'
+            cache_options( :path => '/${TMPDIR}/chef/${server}/checksums' )
+EOF
+    fi
+}
+
 function prepare_chef() {
     # $1 - server
     local server=$1
@@ -594,7 +618,7 @@ function create_chef_environment() {
     cp ${environment_source} ${temp_env_file}
     sed -i -e "s/${environment_basename}/${environment}/" ${temp_env_file}
 
-    prepare_chef ${server}
+    chef11_prepare_chef ${server}
 
     local knife=${TMPDIR}/chef/${server}/knife.rb
 
