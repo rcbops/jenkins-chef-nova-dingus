@@ -9,7 +9,7 @@ source $(dirname $0)/chef-jenkins.sh
 print_banner "Initializing Job"
 init
 
-CHEF_ENV="minicluster"
+CHEF_ENV="allinone"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
@@ -27,7 +27,7 @@ BASH_XTRACEFD=9
 set -x
 
 declare -a cluster
-cluster=(api api2 compute1 compute2)
+cluster=(api)
 
 start_timer
 setup_quantum_network
@@ -68,7 +68,7 @@ run_twice upload_roles
 EOF
 background_task "fc_do"
 
-x_with_cluster "Cluster booted.  Setting up the package providers and vpn thingy..." ${cluster[@]} <<EOF
+x_with_cluster "Cluster booted.  Setting up the package providers and dummy interface..." ${cluster[@]} <<EOF
 plumb_quantum_networks eth1
 # set_quantum_network_link_up eth2
 cleanup_metadata_routes eth0 eth1 
@@ -77,8 +77,9 @@ wait_for_rhn
 set_package_provider
 update_package_provider
 run_twice install_package bridge-utils
+modprobe dummy
+ip l s dummy0 up
 EOF
-setup_private_network eth0 br99 api ${cluster[@]}
 stop_timer
 
 start_timer
@@ -112,57 +113,19 @@ vgcreate cinder-volumes /dev/vdb
 EOF
 stop_timer
 
+set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
+
 start_timer
-role_add chef-server api "role[ha-controller1],role[cinder-volume]"
+role_add chef-server api "role[single-controller],role[cinder-volume],recipe[kong],recipe[exerstack],role[single-compute]"
 x_with_cluster "Installing the controller" api <<EOF
 chef-client
 EOF
 stop_timer
 
 start_timer
-echo "turning off image upload"
-set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
-stop_timer
-
-start_timer
-role_add chef-server api2 "role[ha-controller2]"
-x_with_cluster "Installing the controller" api2 <<EOF
+x_with_cluster "Running chef again so we can lay down the EC2 credentials correctly" api <<EOF
 chef-client
 EOF
-stop_timer
-
-role_add chef-server api "recipe[kong],recipe[exerstack]"
-role_add chef-server compute1 "role[single-compute]"
-role_add chef-server compute2 "role[single-compute]"
-x_with_cluster "Running chef on all nodes" ${cluster[@]} <<EOF
-chef-client
-EOF
-stop_timer
-
-start_timer
-x_with_server "Fixerating the API node" api <<EOF
-fix_for_tests
-EOF
-background_task "fc_do"
-x_with_server "Fixerating the API node" api2 <<EOF
-fix_for_tests 192.168.100.253
-EOF
-background_task "fc_do"
-collect_tasks
-stop_timer
-
-start_timer
-# TODO(breu): this needs to get removed
-if [[ ${PACKAGE_COMPONENT} = "folsom" ]]; then
-  echo "this is your folsom.  there is no other folsom like it."
-  echo "stopping glance-registry and glance-api on api2"
-  x_with_server "stopping glance services on second node" api2 <<EOF
-    monit stop glance-api
-    monit stop glance-registry
-EOF
-  background_task "fc_do"
-  collect_tasks
-fi
 stop_timer
 
 retval=0

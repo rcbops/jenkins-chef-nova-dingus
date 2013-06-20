@@ -81,8 +81,18 @@ function destroy_quantum_network() {
         echo "will not delete the public network"
         exit 1
     fi
-    quantum subnet-delete "${JOBID}-mgmt"
-    quantum net-delete "${JOBID}-mgmt"
+    echo "tearming down quantum networks"
+    # we loop until this completes or the gate job is terminated
+    if quantum subnet-show "${JOBID}-mgmt";then
+      while ! quantum subnet-delete "${JOBID}-mgmt"; do
+        echo "failed to delete quantum network...  sleeping"
+        sleep 5s
+      done;
+    fi
+
+    if quantum net-show "${JOBID}-mgmt"; then
+      quantum net-delete "${JOBID}-mgmt"
+    fi
     #quantum subnet-delete "${JOBID}-vmnet"
     #quantum net-delete "${JOBID}-vmnet"
 }
@@ -139,10 +149,8 @@ function cleanup() {
 
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
         echo "We are the parent - cleaning up after the kids"
-        if [ ${NOCLEAN} -eq 0 ]; then
+        if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
             destroy_quantum_network
-        fi
-        if [ ${NOCLEAN} -eq 0 ]; then
             rm -rf ${TMPDIR}
         fi
     fi
