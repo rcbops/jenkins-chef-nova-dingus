@@ -119,6 +119,14 @@ chef-client
 EOF
 stop_timer
 
+if [[ ${PACKAGE_COMPONENT} = "folsom" ]]; then
+  start_timer
+  x_with_cluster "running chef for a second time on api" api <<EOF
+chef-client
+EOF
+  stop_timer
+fi
+
 start_timer
 echo "turning off image upload"
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "false"
