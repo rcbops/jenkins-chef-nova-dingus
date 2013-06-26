@@ -235,7 +235,6 @@ function print_repeat() {
 }
 
 function print_banner() {
-    set +x                  # turn off super debug
     local max_length=0
     local n
 
@@ -254,7 +253,6 @@ function print_banner() {
         print_repeat ' ' $((max_length-line_l)) '' ' #'
     done;
     print_repeat '#' $max_length '##' '##'
-    set -x                  # turn on super debug
 }
 
 function boot_and_wait() {
@@ -608,7 +606,7 @@ EOF
 function unpack_local_chef_tarball() {
     local tarball=$1
     if [[ -f ${tarball} ]]; then
-        tar zfxv ${tarball} -C ${TMPDIR}/
+        tar zfx ${tarball} -C ${TMPDIR}/
     else
         echo "${tarball} is not present"
         exit 49
@@ -622,7 +620,7 @@ function upload_local_chef_cookbooks() {
         echo "cookbooks do not exist in ${TMPDIR}/chef-cookbooks"
         exit 50
     fi
-    knife cookbook upload -a -o ${TMPDIR}/chef-cookbooks -c ${knife}
+    knife cookbook upload -a -o ${TMPDIR}/chef-cookbooks/cookbooks -c ${knife}
 }
 
 function upload_local_chef_roles() {
