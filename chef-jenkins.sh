@@ -235,6 +235,7 @@ function print_repeat() {
 }
 
 function print_banner() {
+    set +x                  # turn off super debug
     local max_length=0
     local n
 
@@ -253,6 +254,7 @@ function print_banner() {
         print_repeat ' ' $((max_length-line_l)) '' ' #'
     done;
     print_repeat '#' $max_length '##' '##'
+    set -x                  # turn on super debug
 }
 
 function boot_and_wait() {
