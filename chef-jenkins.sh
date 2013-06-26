@@ -605,6 +605,7 @@ EOF
 
 function unpack_local_chef_tarball() {
     local tarball=$1
+    print_banner "Unpacking the chef tarball"
     if [[ -f ${tarball} ]]; then
         tar zfx ${tarball} -C ${TMPDIR}/
     else
@@ -616,6 +617,7 @@ function unpack_local_chef_tarball() {
 function upload_local_chef_cookbooks() {
     local server=$1
     local knife=${TMPDIR}/chef/${server}/knife.rb
+    print_banner "Uploading the chef cookbooks"
     if [[ ! -d "${TMPDIR}/chef-cookbooks" ]]; then
         echo "cookbooks do not exist in ${TMPDIR}/chef-cookbooks"
         exit 50
@@ -626,6 +628,7 @@ function upload_local_chef_cookbooks() {
 function upload_local_chef_roles() {
     local server=$1
     local knife=${TMPDIR}/chef/${server}/knife.rb
+    print_banner "Uploading the chef roles"
     if [[ ! -d "${TMPDIR}/chef-cookbooks/roles" ]]; then
         echo "cookbook roles do not exist in ${TMPDIR}/chef-cookbooks/roles"
         exit 51
