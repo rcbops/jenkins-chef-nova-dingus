@@ -239,79 +239,85 @@ function checkout_cookbooks() {
     local master_repo=${master_info[0]}
     local master_branch=${master_info[1]:-grizzly}
 
-    if [[ ${GIT_MASTER_URL} =~ "https://github.com/rcbops/chef-cookbooks" ]]; then
-      echo "using the cached repo"
+
+    # if we have pre-supplied the job with a cookbooks tarball, use it
+    # otherwise go through the github gyrations to get it all onto the chef
+    # server
+    if [[ -e ${COOKBOOKS_TARBALL} ]]; then
+        rm -rf /${COOKBOOK_PATH}/chef-cookbooks
+        tar zfxv /root/chef-cookbooks.tgz -C /${COOKBOOK_PATH}
     else
-      echo " we are looking at a different repo, so we can't use the one we have cached"
-      rm -rf /root/chef-cookbooks
-    fi
-
-    if [[ -d /root/chef-cookbooks ]]; then
-      cd chef-cookbooks
-      git fetch origin
-      git checkout ${master_branch}
-      git clean -ffdx
-      git pull origin ${master_branch}
-      git submodule init
-      git submodule sync
-    else
-      git clone ${master_repo}
-
-      mkdir -p chef-cookbooks
-      cd chef-cookbooks
-      git checkout ${master_branch}
-      git submodule init
-    fi
-
-    # github, y u no work?
-    local count=1
-
-    while [ $count -lt 10 ] && ! git submodule update; do
-        sleep 10
-        count=$((count + 1))
-    done
-
-    if [ $count -ge 10 ]; then
-        # submodule update failed...
-        echo "your github is b0rken"
-        return 1
-    fi
-
-
-    pushd cookbooks
-    # Okay, now start going through the overrides
-    overrides=(${COOKBOOK_OVERRIDE-})
-    if [ ! -z "${overrides:-}" ]; then
-        for override in ${overrides[@]}; do
-            echo "Doing override: ${override}"
-            declare -a repo_info
-            repo_info=(${override//,/ })
-            local repo=${repo_info[0]}
-            local branch=${repo_info[1]:-master}
-            local dirname=$(echo ${repo##*/}|cut -d'.' -f1)
-
-            if [ -e ${dirname} ]; then
-                rm -rf ${dirname}
-            fi
-
-            git clone ${repo}
-            pushd ${dirname}
-            git checkout ${branch}
-            popd
-        done
-    fi
-
-    # If the overrides are specified as a git patch,
-    # apply that patch, too
-    if [ "${GIT_DIFF_URL:-}" != "" ]; then
-        if [ "${GIT_REPO:-}" != "" ]; then
-            cd ${GIT_REPO}
-            curl -s ${GIT_DIFF_URL} | git apply -v --whitespace=fix
+        if [[ ${GIT_MASTER_URL} =~ "https://github.com/rcbops/chef-cookbooks" ]]; then
+            echo "using the cached repo"
+        else
+            echo " we are looking at a different repo, so we can't use the one we have cached"
+            rm -rf /root/chef-cookbooks
         fi
+
+        if [[ -d /${COOKBOOK_PATH}/chef-cookbooks ]]; then
+            cd chef-cookbooks
+            git fetch origin
+            git checkout ${master_branch}
+            git clean -ffdx
+            git pull origin ${master_branch}
+            git submodule init
+            git submodule sync
+        else
+            git clone ${master_repo}
+
+            mkdir -p chef-cookbooks
+            cd chef-cookbooks
+            git checkout ${master_branch}
+            git submodule init
+        fi
+
+        # github, y u no work?
+        local count=1
+
+        while [ $count -lt 10 ] && ! git submodule update; do
+            sleep 10
+            count=$((count + 1))
+        done
+
+        if [ $count -ge 10 ]; then
+            # submodule update failed...
+            echo "your github is b0rken"
+            return 1
+        fi
+
+        pushd cookbooks
+        # Okay, now start going through the overrides
+        overrides=(${COOKBOOK_OVERRIDE-})
+        if [ ! -z "${overrides:-}" ]; then
+            for override in ${overrides[@]}; do
+                echo "Doing override: ${override}"
+                declare -a repo_info
+                repo_info=(${override//,/ })
+                local repo=${repo_info[0]}
+                local branch=${repo_info[1]:-master}
+                local dirname=$(echo ${repo##*/}|cut -d'.' -f1)
+
+                if [ -e ${dirname} ]; then
+                    rm -rf ${dirname}
+                fi
+
+                git clone ${repo}
+                pushd ${dirname}
+                git checkout ${branch}
+                popd
+            done
+        fi
+
+        # If the overrides are specified as a git patch,
+        # apply that patch, too
+        if [ "${GIT_DIFF_URL:-}" != "" ]; then
+            if [ "${GIT_REPO:-}" != "" ]; then
+                cd ${GIT_REPO}
+                curl -s ${GIT_DIFF_URL} | git apply -v --whitespace=fix
+            fi
+        fi
+        popd
     fi
-
-    popd
-
 }
 
 function upload_cookbooks() {
