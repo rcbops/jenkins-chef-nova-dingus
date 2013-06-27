@@ -239,28 +239,29 @@ function checkout_cookbooks() {
     local master_repo=${master_info[0]}
     local master_branch=${master_info[1]:-grizzly}
 
+
     if [[ ${GIT_MASTER_URL} =~ "https://github.com/rcbops/chef-cookbooks" ]]; then
-      echo "using the cached repo"
+        echo "using the cached repo"
     else
-      echo " we are looking at a different repo, so we can't use the one we have cached"
-      rm -rf /root/chef-cookbooks
+        echo " we are looking at a different repo, so we can't use the one we have cached"
+        rm -rf /root/chef-cookbooks
     fi
 
-    if [[ -d /root/chef-cookbooks ]]; then
-      cd chef-cookbooks
-      git fetch origin
-      git checkout ${master_branch}
-      git clean -ffdx
-      git pull origin ${master_branch}
-      git submodule init
-      git submodule sync
+    if [[ -d /${COOKBOOK_PATH}/chef-cookbooks ]]; then
+        cd chef-cookbooks
+        git fetch origin
+        git checkout ${master_branch}
+        git clean -ffdx
+        git pull origin ${master_branch}
+        git submodule init
+        git submodule sync
     else
-      git clone ${master_repo}
+        git clone ${master_repo}
 
-      mkdir -p chef-cookbooks
-      cd chef-cookbooks
-      git checkout ${master_branch}
-      git submodule init
+        mkdir -p chef-cookbooks
+        cd chef-cookbooks
+        git checkout ${master_branch}
+        git submodule init
     fi
 
     # github, y u no work?
@@ -276,7 +277,6 @@ function checkout_cookbooks() {
         echo "your github is b0rken"
         return 1
     fi
-
 
     pushd cookbooks
     # Okay, now start going through the overrides
@@ -309,9 +309,7 @@ function checkout_cookbooks() {
             curl -s ${GIT_DIFF_URL} | git apply -v --whitespace=fix
         fi
     fi
-
     popd
-
 }
 
 function upload_cookbooks() {

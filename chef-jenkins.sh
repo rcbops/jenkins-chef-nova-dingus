@@ -613,6 +613,39 @@ EOF
     fi
 }
 
+function unpack_local_chef_tarball() {
+    local tarball=$1
+    print_banner "Unpacking the chef tarball"
+    if [[ -f ${tarball} ]]; then
+        tar zfx ${tarball} -C ${TMPDIR}/
+    else
+        echo "${tarball} is not present"
+        exit 49
+    fi
+}
+
+function upload_local_chef_cookbooks() {
+    local server=$1
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+    print_banner "Uploading the chef cookbooks"
+    if [[ ! -d "${TMPDIR}/chef-cookbooks" ]]; then
+        echo "cookbooks do not exist in ${TMPDIR}/chef-cookbooks"
+        exit 50
+    fi
+    knife cookbook upload -a -o ${TMPDIR}/chef-cookbooks/cookbooks -c ${knife}
+}
+
+function upload_local_chef_roles() {
+    local server=$1
+    local knife=${TMPDIR}/chef/${server}/knife.rb
+    print_banner "Uploading the chef roles"
+    if [[ ! -d "${TMPDIR}/chef-cookbooks/roles" ]]; then
+        echo "cookbook roles do not exist in ${TMPDIR}/chef-cookbooks/roles"
+        exit 51
+    fi
+    knife role from file ${TMPDIR}/chef-cookbooks/roles/*.rb -c ${knife}
+}
+
 function create_chef_environment() {
     # $1 - server
     # $2 - environment file
