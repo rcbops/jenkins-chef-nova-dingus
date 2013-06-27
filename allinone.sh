@@ -128,7 +128,7 @@ set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/im
 
 start_timer
 role_add chef-server api "role[allinone],role[cinder-volume],recipe[kong],recipe[exerstack]"
-x_with_cluster "Installing the controller" api <<EOF
+x_with_cluster "Installing everyting" api <<EOF
 chef-client
 EOF
 stop_timer
