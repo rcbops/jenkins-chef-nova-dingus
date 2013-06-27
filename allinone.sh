@@ -116,7 +116,7 @@ stop_timer
 set_environment_attribute chef-server ${CHEF_ENV} "override_attributes/glance/image_upload" "true"
 
 start_timer
-role_add chef-server api "role[single-controller],role[cinder-volume],recipe[kong],recipe[exerstack],role[single-compute]"
+role_add chef-server api "role[allinone],role[cinder-volume],recipe[kong],recipe[exerstack]"
 x_with_cluster "Installing the controller" api <<EOF
 chef-client
 EOF
