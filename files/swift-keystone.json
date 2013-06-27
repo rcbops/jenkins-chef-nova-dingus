@@ -5,9 +5,53 @@
     "cookbook_versions": {
     },
     "override_attributes": {
+        "keystone": {
+            "published_services": [
+                {
+                    "name": "swift",
+                    "type": "object-store",
+                    "description": "Swift Object Storage",
+                    "endpoints": {
+                        "RegionOne": {
+                            "admin_url": "http://192.168.122.138:8080",
+                            "internal_url": "http://192.168.122.138:8080",
+                            "public_url": "http://192.168.122.138:8080"
+                        }
+                    }
+                }
+            ],
+            "tenants": [
+                "admin",
+                "service"
+            ],
+            "users": {
+                "swift": {
+                    "password": "swift",
+                    "default_tenant": "service",
+                    "roles": {
+                        "admin": [
+                            "service"
+                        ]
+                    }
+                },
+                "admin": {
+                    "password": "secrete",
+                    "default_tenant": "admin",
+                    "roles": {
+                        "admin": [
+                            "admin"
+                        ],
+                        "KeystoneAdmin": [
+                            "admin"
+                        ],
+                        "KeystoneServiceAdmin": [
+                            "admin"
+                        ]
+                    }
+                }
+            }
+        },
         "osops_networks": {
-            "swift": "10.127.53.0/24",
-            "swift-lb": "10.127.53.0/24",
             "public": "10.127.53.0/24",
             "nova": "10.127.53.0/24",
             "management": "10.127.53.0/24"
@@ -16,22 +60,10 @@
             "allow_remote_root": true,
             "root_network_acl": "10.127.53.%"
         },
-        "swift": {
-            "use_informant": false,
-            "authkey": "3f281b71-ce89-4b27-a2ad-ad873d3f2760",
-            "swift_hash": "107c0568ea84",
-            "auto_rebuild_rings": true,
-            "authmode": "keystone",
-            "disk_test_filter": [
-                "candidate =~ /vd[^a]/",
-                "File.exist?('/dev/' + candidate)",
-                "info['removable'] = 0"
-            ]
-        },
         "monitoring": {
             "alarm_provider": "none",
             "metric_provider": "none",
-            "procmon_provider": "monit"
+            "procmon_provider": "none"
         }
     },
     "name": "swift-keystone",
