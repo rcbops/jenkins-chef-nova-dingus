@@ -107,13 +107,23 @@ chef-client
 EOF
 stop_timer
 
-set_environment chef-server keystone swift-keystone
 set_environment_all chef-server swift-lite
+set_environment chef-server keystone swift-keystone
+
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/admin_url" "\"http://$(ip_for_host proxy1):8080\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/internal_url" "\"http://$(ip_for_host proxy1):8080\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/public_url" "\"http://$(ip_for_host proxy1):8080\""
 
 role_add chef-server keystone "recipe[osops-utils::packages]"
 role_add chef-server keystone "role[mysql-master]"
 role_add chef-server keystone "role[keystone]"
 
 x_with_cluster "installing keystone" keystone <<EOF
+chef-client
+EOF
+
+set_environment_attribute chef-server swift-lite "override_attributes/swift/keystone_endpoint" "\"http://$(ip_for_host keystone):35357\""
+
+x_with_cluster "installing swifteses" proxy1 storage{1..3} <<EOF
 chef-client
 EOF

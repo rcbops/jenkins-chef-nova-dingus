@@ -160,7 +160,10 @@ function cleanup() {
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
         echo "We are the parent - cleaning up after the kids"
         if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
-            destroy_quantum_network
+            # don't destroy the network if the cluster is to be left intact
+            if [ ${DEPLOY} -ne 1 ]; then
+                destroy_quantum_network
+            fi
             rm -rf ${TMPDIR}
         fi
     fi

@@ -52,13 +52,13 @@
             }
         },
         "osops_networks": {
-            "public": "10.127.53.0/24",
-            "nova": "10.127.53.0/24",
-            "management": "10.127.53.0/24"
+            "public": "10.0.0.0/8",
+            "nova": "10.0.0.0/8",
+            "management": "10.0.0.0/8"
         },
         "mysql": {
             "allow_remote_root": true,
-            "root_network_acl": "10.127.53.%"
+            "root_network_acl": "%"
         },
         "monitoring": {
             "alarm_provider": "none",
