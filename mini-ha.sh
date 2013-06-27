@@ -84,7 +84,9 @@ knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 stop_timer
 
 # if we have been provided a chef cookbook tarball let's use it otherwise
-# upload the cookbooks the normal way
+# upload the cookbooks the normal way.  If we have the tarball the upload
+# is initiated from the build server, otherwise all the work is done on the
+# chef-server VM
 if [[ ! -f ${COOKBOOKS_TARBALL} ]]; then
   start_timer
   x_with_server "uploading the cookbooks" "chef-server" <<EOF
