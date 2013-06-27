@@ -47,7 +47,6 @@ flush_iptables
 run_twice install_package git-core
 fixup_hosts_file_for_quantum
 chef11_fixup
-run_twice checkout_cookbooks
 EOF
 background_task "fc_do"
 
@@ -60,13 +59,6 @@ wait_for_cluster_ssh ${cluster[@]}
 print_banner "Waiting for SSH to become available"
 wait_for_cluster_ssh_key ${cluster[@]}
 stop_timer
-
-start_timer
-x_with_server "uploading the cookbooks" "chef-server" <<EOF
-run_twice upload_cookbooks
-run_twice upload_roles
-EOF
-background_task "fc_do"
 
 x_with_cluster "Cluster booted.  Setting up the package providers and vpn thingy..." ${cluster[@]} <<EOF
 plumb_quantum_networks eth1
@@ -89,6 +81,25 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable (not really needed in grizzly but no matter)
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 stop_timer
+
+# if we have been provided a chef cookbook tarball let's use it otherwise
+# upload the cookbooks the normal way.  If we have the tarball the upload
+# is initiated from the build server, otherwise all the work is done on the
+# chef-server VM
+if [[ ! -f ${COOKBOOKS_TARBALL} ]]; then
+  start_timer
+  x_with_server "uploading the cookbooks" "chef-server" <<EOF
+  checkout_cookbooks
+  run_twice upload_cookbooks
+  run_twice upload_roles
+EOF
+  background_task "fc_do"
+  stop_timer
+else
+  unpack_local_chef_tarball ${COOKBOOKS_TARBALL}
+  upload_local_chef_cookbooks chef-server
+  upload_local_chef_roles chef-server
+fi
 
 start_timer
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
