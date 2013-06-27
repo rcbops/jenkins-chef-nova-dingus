@@ -1,0 +1,19 @@
+{
+    "cookbook_versions": {
+    },
+    "json_class": "Chef::Environment",
+    "override_attributes": {
+        "mysql": {
+            "allow_remote_root": true,
+            "root_network_acl": "%"
+        },
+        "osops_networks": {
+            "management": "192.168.0.0/24",
+            "nova": "192.168.0.0/24",
+            "public": "192.168.0.0/24"
+        }
+    },
+    "name": "swift-lite",
+    "chef_type": "environment",
+    "description": ""
+}
