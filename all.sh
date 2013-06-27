@@ -157,6 +157,9 @@ chef-client
 EOF
 stop_timer
 
+echo "sleeping for 2 minutes"
+sleep 2m
+
 start_timer
 role_add chef-server mysql "role[mysql-master]"
 x_with_cluster "Installing second mysql" mysql <<EOF
