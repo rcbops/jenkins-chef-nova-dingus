@@ -66,6 +66,11 @@ PARENT_PID=$$
 declare -a FC_TASKS
 
 function setup_quantum_network() {
+    if [ $USE_CS -eq 1 ]; then
+        echo "This is why we can't have nice things"
+        return 0
+    fi
+
     if [[ ${JOBID} = "public" ]]; then
         echo "can not create a public network"
         exit 1
@@ -77,11 +82,16 @@ function setup_quantum_network() {
 }
 
 function destroy_quantum_network() {
+    if [ $USE_CS -eq 1 ]; then
+        echo "This is why we can't have nice things"
+        return 0
+    fi
+
     if [[ ${JOBID} = "public" ]]; then
         echo "will not delete the public network"
         exit 1
     fi
-    echo "tearming down quantum networks"
+    echo "tearing down quantum networks"
     # we loop until this completes or the gate job is terminated
     if quantum subnet-show "${JOBID}-mgmt";then
       while ! quantum subnet-delete "${JOBID}-mgmt"; do
@@ -297,7 +307,7 @@ function boot_and_wait() {
         LOGIN="root"
     fi
 
-    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AZ} ${extra_flags} ${name} > /dev/null 2>&1 || :
+    nova boot --flavor=${flavor} --image=${image} --availability_zone ${AZ} ${extra_flags} ${name} > /dev/null 2>&1
 
     local count=0
     local SLEEP_TIMER=2
