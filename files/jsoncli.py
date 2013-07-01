@@ -107,6 +107,7 @@ def main():
             f, fargs = op[0], [args.json]
             fargs.extend(op[1:])
             r = f(*fargs)
+            args.json = r
         except (KeyError, IndexError):
             if not args.quiet:
                 sys.stderr.write("Failed to apply %s\n" % op)
