@@ -24,7 +24,8 @@
         "osops_networks": {
             "swift-storage": "10.0.0.0/8",
             "swift-replication": "10.0.0.0/8",
-            "swift-proxy": "10.0.0.0/8"
+            "swift-proxy": "10.0.0.0/8",
+            "swift-management": "10.0.0.0/8"
         }
     },
     "name": "swift-lite",
