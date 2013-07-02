@@ -690,12 +690,10 @@ function set_environment() {
 
     echo "Setting ${node} (${chef_node_name}) to environment ${environment}"
 
-#    knife node show ${chef_node_name} -c ${knife}
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
     sed -i -e "s/_default/${environment}/" ${TMPDIR}/${chef_node_name}.json
     sed -i -e 's/^{$/{"json_class": "Chef::Node",/' ${TMPDIR}/${chef_node_name}.json
     knife node from file ${TMPDIR}/${chef_node_name}.json -c ${knife}
-#    knife node show ${chef_node_name} -c ${knife}
 }
 
 function set_environment_all() {
@@ -776,8 +774,9 @@ function set_node_attribute() {
     local chef_node_name=$(knife node list -c ${knife} | grep ${full_node_name} | head -n1 | awk '{ print $1 }')
 
     knife node show ${chef_node_name} -fj -c ${knife} > ${TMPDIR}/${chef_node_name}.json
-    ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}"  -s 'json_class="Chef::Node"' ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
-    knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new.json
+    ${SOURCE_DIR}/files/jsoncli.py -s "${key}=${value}" ${TMPDIR}/${chef_node_name}.json > ${TMPDIR}/${chef_node_name}-new.json
+    ${SOURCE_DIR}/files/jsoncli.py -s 'json_class="Chef::Node"' ${TMPDIR}/${chef_node_name}-new.json > ${TMPDIR}/${chef_node_name}-new2.json
+    knife node from file -c ${knife} ${TMPDIR}/${chef_node_name}-new2.json > /dev/null 2>&1
 }
 
 function knife_set_package_component() {
