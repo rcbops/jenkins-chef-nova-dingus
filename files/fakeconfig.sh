@@ -32,7 +32,7 @@ function prep_chef_client() {
 }
 
 function make_roush_log_dev_null() {
-    sed -i 's/^logfile=.*/logfile=\/dev\/null/g' /etc/roush/roush.conf 
+    sed -i 's/^logfile=.*/logfile=\/dev\/null/g' /etc/roush/roush.conf
 }
 
 function add_repo_key() {
@@ -319,8 +319,10 @@ function upload_cookbooks() {
 }
 
 function upload_roles() {
-    cd ${COOKBOOK_PATH}/chef-cookbooks
-    knife role from file roles/*.rb
+    local whatdir=${1:-${COOKBOOK_PATH}/chef-cookbooks/roles}
+
+    cd ${whatdir}
+    knife role from file *.rb
 }
 
 function install_chef_client() {
@@ -436,9 +438,10 @@ function bridge_whoop_de_do() {
 function template_client() {
     # $1 - IP
     local ip=$1
+    local env=${2:-${CHEF_ENV}}
 
     sed /etc/chef/client-template.rb -s -e s/@IP@/${ip}/ > /etc/chef/client.rb
-    echo "environment '${CHEF_ENV}'" >> /etc/chef/client.rb
+    echo "environment '${env}'" >> /etc/chef/client.rb
 }
 
 function flush_iptables() {

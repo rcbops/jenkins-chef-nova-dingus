@@ -3,14 +3,28 @@
     },
     "json_class": "Chef::Environment",
     "override_attributes": {
-        "mysql": {
-            "allow_remote_root": true,
-            "root_network_acl": "%"
+        "vips": {
+            "swift-proxy": "http://0.0.0.0:8080"
+        },
+        "nova": {
+        },
+        "memcached": {
+            "services": {
+                "cache": {
+                    "network": "swift-storage"
+                }
+            }
+        },
+        "swift": {
+            "swift_hash": "blahblahblahblah",
+            "uid": 400,
+            "service_pass": "swift",
+            "keystone_endpoint": "http://192.168.122.113:35357"
         },
         "osops_networks": {
-            "management": "192.168.0.0/24",
-            "nova": "192.168.0.0/24",
-            "public": "192.168.0.0/24"
+            "swift-storage": "10.0.0.0/8",
+            "swift-replication": "10.0.0.0/8",
+            "swift-proxy": "10.0.0.0/8"
         }
     },
     "name": "swift-lite",

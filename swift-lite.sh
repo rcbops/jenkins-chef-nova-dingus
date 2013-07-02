@@ -49,8 +49,7 @@ run_twice install_package git-core
 fixup_hosts_file_for_quantum
 chef11_fixup
 run_twice checkout_cookbooks
-git clone http://github.com/rpedde-rcbops/swift-lite chef-cookbooks/cookbooks/swift-lite
-knife role from file chef-cookbooks/cookbooks/swift-lite/contrib/roles/*.rb
+git clone http://github.com/rpedde-rcbops/swift-lite cookbooks/swift-lite
 EOF
 background_task "fc_do"
 
@@ -68,6 +67,7 @@ start_timer
 x_with_server "uploading the cookbooks" "chef-server" <<EOF
 run_twice upload_cookbooks
 run_twice upload_roles
+run_twice upload_roles /root/chef-cookbooks/cookbooks/swift-lite/contrib/roles
 EOF
 background_task "fc_do"
 
@@ -97,7 +97,17 @@ stop_timer
 # add_chef_clients chef-server ${cluster[@]} # what does this do?
 
 start_timer
-x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
+x_with_server "Install chef-client on keystone server" keystone <<EOF
+flush_iptables
+install_chef_client
+chef11_fetch_validation_pem $(ip_for_host chef-server)
+copy_file client-template.rb /etc/chef/client-template.rb
+template_client $(ip_for_host chef-server) swift-keystone
+chef-client
+EOF
+background_task "fc_do"
+
+x_with_cluster "Installing chef-client and running for the first time" proxy1 storage{1..3} <<EOF
 flush_iptables
 install_chef_client
 chef11_fetch_validation_pem $(ip_for_host chef-server)
@@ -107,8 +117,20 @@ chef-client
 EOF
 stop_timer
 
-set_environment chef-server keystone swift-keystone
-set_environment_all chef-server swift-lite
+# not strictly necessary, as this is done on the client side
+for host in ${cluster[@]}; do
+    if [ "${host}" = "keystone" ]; then
+        new_env="swift-keystone"
+    else
+        new_env="swift-lite"
+    fi
+
+    set_node_attribute chef-server ${host} "chef_environment" "\"${new_env}\""
+done
+
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/admin_url" "\"http://$(ip_for_host proxy1):8080\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/internal_url" "\"http://$(ip_for_host proxy1):8080\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/public_url" "\"http://$(ip_for_host proxy1):8080\""
 
 role_add chef-server keystone "recipe[osops-utils::packages]"
 role_add chef-server keystone "role[mysql-master]"
@@ -117,3 +139,22 @@ role_add chef-server keystone "role[keystone]"
 x_with_cluster "installing keystone" keystone <<EOF
 chef-client
 EOF
+
+
+role_add chef-server proxy1 "recipe[osops-utils::packages]"
+role_add chef-server proxy1 "role[swift-lite-proxy]"
+
+for storage in storage{1..3}; do
+    role_add chef-server ${storage} "recipe[osops-utils::packages]"
+    for class in object account container; do
+        role_add chef-server ${storage} "role[swift-lite-${class}]"
+    done
+done
+
+set_environment_attribute chef-server swift-lite "override_attributes/swift/keystone_endpoint" "\"http://$(ip_for_host keystone):35357\""
+
+x_with_cluster "installing swifteses" ${cluster[@]} <<EOF
+chef-client
+EOF
+
+# now, format the drives and push out a ring and whatnot.
