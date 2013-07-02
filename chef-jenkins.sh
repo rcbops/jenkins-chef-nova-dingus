@@ -251,6 +251,11 @@ function print_banner() {
     local max_length=0
     local n
 
+    if [ ! -z "${SHHH}" ]; then
+        echo -e "\n## $1"
+        return 0
+    fi
+
     local IFS=$'\n'
     for n in $@; do
         local temp_line_count=${#n}
