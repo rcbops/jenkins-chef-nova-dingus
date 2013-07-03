@@ -1032,6 +1032,24 @@ function cluster_fetch_file() {
     collect_tasks
 }
 
+# put a file on a node
+function put_file() {
+    # $1 - node (friendly name)
+    # $2 - local path (potentially globbed)
+    # $3 - remote path
+
+    local friendly_name=$1
+    local remote_path=$2
+    local local_path=$3
+
+    local ip=$(ip_for_host ${friendly_name})
+    local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+    local user=${LOGIN}
+
+    scp -i ${PRIVKEY} ${sshopts} "${local_path}" ${user}@${ip}:"${remote_path}" || /bin/true
+}
+
+
 # fetch a file from a node
 function fetch_file() {
     # $1 - node (friendly name)

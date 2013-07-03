@@ -157,4 +157,67 @@ x_with_cluster "installing swifteses" ${cluster[@]} <<EOF
 chef-client
 EOF
 
-# now, format the drives and push out a ring and whatnot.
+# on the proxy, build up some rings.
+x_with_server "three rings for the elven kings" proxy1 <<EOF
+cd /etc/swift
+
+swift-ring-builder object.builder create 8 3 0
+swift-ring-builder container.builder create 8 3 0
+swift-ring-builder account.builder create 8 3 0
+
+swift-ring-builder object.builder add z1-$(ip_for_host storage1):6000/disk1 100
+swift-ring-builder object.builder add z2-$(ip_for_host storage2):6000/disk1 100
+swift-ring-builder object.builder add z3-$(ip_for_host storage3):6000/disk1 100
+
+swift-ring-builder container.builder add z1-$(ip_for_host storage1):6001/disk1 100
+swift-ring-builder container.builder add z2-$(ip_for_host storage2):6001/disk1 100
+swift-ring-builder container.builder add z3-$(ip_for_host storage3):6001/disk1 100
+
+swift-ring-builder account.builder add z1-$(ip_for_host storage1):6002/disk1 100
+swift-ring-builder account.builder add z2-$(ip_for_host storage2):6002/disk1 100
+swift-ring-builder account.builder add z3-$(ip_for_host storage3):6002/disk1 100
+
+swift-ring-builder object.builder rebalance
+swift-ring-builder container.builder rebalance
+swift-ring-builder account.builder rebalance
+
+chown -R swift: .
+mkdir -p /tmp/rings
+cp {account,object,container}.ring.gz /tmp/rings
+
+chown -R ubuntu: /tmp/rings
+
+exit 0
+EOF
+
+background_task "fc_do"
+
+# ... and in parallel, format the drives and mount
+x_with_cluster "Fixing up swift disks... under the sky" storage{1..3} <<EOF
+install_package xfsprogs
+umount /mnt || /bin/true
+parted -s /dev/vdb mklabel msdos
+parted -s /dev/vdb mkpart primary xfs 1M 100%
+mkfs.xfs -f -i size=512 /dev/vdb1
+mkdir -p /srv/node/disk1
+mount /dev/vdb1 /srv/node/disk1 -o noatime,nodiratime,nobarrier,logbufs=8
+chown -R swift: /srv/node/disk1
+EOF
+
+mkdir -p ${TMPDIR}/rings
+fetch_file proxy1 "/tmp/rings/*.ring.gz" ${TMPDIR}/rings
+
+cluster_do storage{1..3} put_file "${TMPDIR}/rings/*gz" /tmp
+
+x_with_cluster "copying ring data" storage{1..3} <<EOF
+cp /tmp/*.gz /etc/swift
+chown -R swift: /etc/swift
+EOF
+
+# now start all the services
+x_with_cluster "starting services" ${cluster[@]} <<EOF
+chef-client
+EOF
+
+
+echo "Done"
