@@ -7,6 +7,7 @@ JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
 AZ=${AZ:-nova}
 CHEF_CLIENT_VERSION=${CHEF_CLIENT_VERSION:-LATEST}
+JOB_ARCHIVE_FILES=${JOB_ARCHIVE_FILES:-"/var/log"}
 GRAB_LOGFILES_ON_FAILURE=${GRAB_LOGFILES_ON_FAILURE:-0}
 
 # chef-template3
@@ -153,8 +154,7 @@ function cleanup() {
             x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
 fixup_log_files_for_fetch
 EOF
-            cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
-            cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
+            cluster_fetch_file_recursive "/tmp/logfilecopy/*" ./logs ${cluster[@]}
             collect_tasks
             echo "log file grabber done"
         fi
@@ -940,7 +940,7 @@ function fc_do() {
 
     # pass through important environment vars.  This should
     # be configurable, but isn't.
-    for var in COOKBOOK_OVERRIDE GIT_MASTER_URL GIT_PATCH_URL GIT_REPO GIT_DIFF_URL JENKINS_PROXY CHEF_ENV CHEF_CLIENT_VERSION; do
+    for var in COOKBOOK_OVERRIDE GIT_MASTER_URL GIT_PATCH_URL GIT_REPO GIT_DIFF_URL JENKINS_PROXY CHEF_ENV CHEF_CLIENT_VERSION JOB_ARCHIVE_FILES; do
         echo "${var}=${!var}" >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
 

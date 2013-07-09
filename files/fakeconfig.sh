@@ -29,9 +29,15 @@ function run_twice() {
 
 function fixup_log_files_for_fetch() {
     # exclude sshd files
-    find /etc -type d -not -name "ssh" -exec chmod 755 \{\} \;
-    find /etc -type f -not -name "*ssh*" -exec chmod o+r \{\} \;
-    chmod -R 755 /var/log
+    OLD_IFS=${IFS}
+    IFS=","
+    mkdir -p /tmp/logfilecopy
+    for d in ${JOB_ARCHIVE_FILES[@]}; do
+      cp -dR --parents --strip-trailing-slashes ${d} /tmp/logfilecopy/
+    done;
+    IFS=${OLD_IFS}
+    find /tmp/logfilecopy -type d -exec chmod 777 \{\} \;
+    find /tmp/logfilecopy -type f -exec chmod 666 \{\} \;
 }
 
 function prep_chef_client() {

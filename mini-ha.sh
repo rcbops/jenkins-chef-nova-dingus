@@ -5,6 +5,7 @@ START_TIME=$(date +%s)
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 
 GRAB_LOGFILES_ON_FAILURE=1
+JOB_ARCHIVE_FILES="/var/log,/etc"
 
 source $(dirname $0)/chef-jenkins.sh
 

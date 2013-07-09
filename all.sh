@@ -7,6 +7,7 @@ PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,${PACKAGE_COMPONENT}}
 
 GRAB_LOGFILES_ON_FAILURE=1
+JOB_ARCHIVE_FILES="/var/log,/etc"
 
 source $(dirname $0)/chef-jenkins.sh
 
