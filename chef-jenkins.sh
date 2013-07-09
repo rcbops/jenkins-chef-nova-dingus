@@ -7,6 +7,7 @@ JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
 AZ=${AZ:-nova}
 CHEF_CLIENT_VERSION=${CHEF_CLIENT_VERSION:-LATEST}
+GRAB_LOGFILES_ON_FAILURE=${GRAB_LOGFILES_ON_FAILURE:-0}
 
 # chef-template3
 #CHEF_IMAGE=${CHEF_IMAGE:-3e4a8447-a047-4dc4-a7e4-67b3cd3961c3}
@@ -147,14 +148,16 @@ function cleanup() {
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
         nova list
         echo "We are the parent - cleaning up after the kids"
-        echo "grabbing the log files from the nodes"
-        x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
+        if [[ ${GRAB_LOGFILES_ON_FAILURE} -eq 1 ]]; then
+            echo "grabbing the log files from the nodes"
+            x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
 fixup_log_files_for_fetch
 EOF
-        cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
-        cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
-        collect_tasks
-        echo "log file grabber done"
+            cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
+            cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
+            collect_tasks
+            echo "log file grabber done"
+        fi
         if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
             if [ -e ${TMPDIR}/nodes ]; then
                 for d in ${TMPDIR}/nodes/*; do
