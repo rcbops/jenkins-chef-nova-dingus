@@ -1,0 +1,71 @@
+{
+    "cookbook_versions": {
+    },
+    "json_class": "Chef::Environment",
+    "override_attributes": {
+        "monitoring": {
+            "metric_provider": "collectd",
+            "procmon_provider": "monit"
+        },
+        "horizon": {
+          "theme": "Rackspace"
+        },
+        "osops": {
+            "apply_patches": true
+        },
+        "cinder": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "keystone": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "nova": {
+            "debug": true,
+            "network": {
+                "multi_host": true
+            },
+            "libvirt": {
+                "virt_type": "qemu"
+            },
+            "networks": [
+                {
+                    "network_size": "255",
+                    "bridge_dev": "dummy0",
+                    "ipv4_cidr": "192.168.100.0/24",
+                    "bridge": "br99",
+                    "dns1": "8.8.8.8",
+                    "dns2": "8.8.4.4",
+                    "num_networks": "1",
+                    "label": "public"
+                }
+            ]
+        },
+        "glance": {
+            "image_upload": true,
+            "api": {
+                "default_store": "file"
+            },
+            "images": [
+                "cirros"
+            ]
+        },
+        "mysql": {
+            "allow_remote_root": true,
+            "root_network_acl": "%"
+        },
+        "osops_networks": {
+            "management": "192.168.0.0/24",
+            "nova": "192.168.0.0/24",
+            "swift": "192.168.0.0/24",
+            "swift-lb": "192.168.0.0/24",
+            "public": "192.168.0.0/24"
+        }
+    },
+    "name": "allinone",
+    "chef_type": "environment",
+    "description": ""
+}
