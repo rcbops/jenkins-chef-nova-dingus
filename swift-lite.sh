@@ -128,9 +128,9 @@ for host in ${cluster[@]}; do
     set_node_attribute chef-server ${host} "chef_environment" "\"${new_env}\""
 done
 
-set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/admin_url" "\"http://$(ip_for_host proxy1):8080\""
-set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/internal_url" "\"http://$(ip_for_host proxy1):8080\""
-set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/public_url" "\"http://$(ip_for_host proxy1):8080\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/admin_url" "\"http://$(ip_for_host proxy1):8080/v1/AUTH_%(tenant_id)s\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/internal_url" "\"http://$(ip_for_host proxy1):8080/v1/AUTH_%(tenant_id)s\""
+set_environment_attribute chef-server swift-keystone "override_attributes/keystone/published_services/0/endpoints/RegionOne/public_url" "\"http://$(ip_for_host proxy1):8080/v1/AUTH_%(tenant_id)s\""
 
 role_add chef-server keystone "recipe[osops-utils::packages]"
 role_add chef-server keystone "role[mysql-master]"
@@ -207,10 +207,10 @@ EOF
 mkdir -p ${TMPDIR}/rings
 fetch_file proxy1 "/tmp/rings/*.ring.gz" ${TMPDIR}/rings
 
-cluster_do storage{1..3} put_file "${TMPDIR}/rings/*gz" /tmp
-
 x_with_cluster "copying ring data" storage{1..3} <<EOF
-cp /tmp/*.gz /etc/swift
+copy_file ${TMPDIR}/rings/account.ring.gz /etc/swift
+copy_file ${TMPDIR}/rings/container.ring.gz /etc/swift
+copy_file ${TMPDIR}/rings/object.ring.gz /etc/swift
 chown -R swift: /etc/swift
 EOF
 
@@ -219,5 +219,48 @@ x_with_cluster "starting services" ${cluster[@]} <<EOF
 chef-client
 EOF
 
+
+cat > ${TMPDIR}/config.ini <<EOF2
+[KongRequester]
+auth_url = http://$(ip_for_host keystone):5000
+user = admin
+password = secrete
+tenantname = admin
+region = RegionOne
+EOF2
+
+
+# install kong and exerstack and do the thangs
+x_with_server "Installing kong and exerstack" proxy1 <<EOF
+cd /root
+install_package git
+git clone https://github.com/rcbops/kong /root/kong
+git clone https://github.com/rcbops/exerstack /root/exerstack
+
+cat > /root/exerstack/localrc <<EOF2
+export SERVICE_HOST=$(ip_for_host keystone)
+export NOVA_PROJECT_ID=admin
+export OS_AUTH_URL=http://$(ip_for_host keystone):5000/v2.0
+export OS_TENANT_NAME=admin
+export OS_USERNAME=admin
+export OS_PASSWORD=secrete
+export OS_AUTH_STRATEGY=keystone
+export OS_REGION_NAME=RegionOne
+export OS_VERSION=2.0
+EOF2
+
+pushd /root/exerstack
+./exercise.sh grizzly swift.sh
+popd
+
+copy_file ${TMPDIR}/config.ini /root/kong/etc
+
+pushd /root/kong
+ONESHOT=1 ./run_tests.sh -V --version grizzly --swift --keystone
+popd
+
+EOF
+
+fc_do
 
 echo "Done"
