@@ -175,9 +175,8 @@ if [ -e /etc/cinder ]; then chmod -R 755 /etc/cinder; fi
 if [ -e /etc/swift ]; then chmod -R 755 /etc/swift; fi
 EOF
 
-cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${cluster[@]}
-cluster_fetch_file "/var/log/syslog" ./logs ${cluster[@]}
-cluster_fetch_file "/etc/{nova,glance,keystone,cinder,swift}/*" ./logs/config ${cluster[@]}
+cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
+cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
 stop_timer
 
 if [ $retval -eq 0 ]; then

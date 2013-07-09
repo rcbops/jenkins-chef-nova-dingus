@@ -1032,6 +1032,25 @@ function cluster_fetch_file() {
     collect_tasks
 }
 
+# grab log files from all the nodes in a cluster
+# and drop them in subdirs under the node name
+function cluster_fetch_file_recursive() {
+    # $1 - remote path
+    # $2 - local path (root of dir)
+    # $3... - cluster nodes
+
+    local remote_path="$1"
+    local local_path="$2"
+    shift; shift
+
+    for host in $@; do
+        mkdir -p ${local_path}/${host}
+        background_task fetch_file_recursive ${host} "\"${remote_path}\"" ${local_path}/${host}
+    done
+
+    collect_tasks
+}
+
 # put a file on a node
 function put_file() {
     # $1 - node (friendly name)
@@ -1064,6 +1083,22 @@ function fetch_file() {
     local user=${LOGIN}
 
     scp -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
+}
+
+# fetch a files recursively from a node
+function fetch_file_recursive() {
+    # $1 - node (friendly name)
+    # $2 - remote path (or remoted glob)
+    # $3 - local path
+    local friendly_name=$1
+    local remote_path=$2
+    local local_path=$3
+
+    local ip=$(ip_for_host ${friendly_name})
+    local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+    local user=${LOGIN}
+
+    scp -ir ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
 }
 
 # we'll just lisp this up a bit - a cluster partial for you, wilk
