@@ -162,23 +162,6 @@ if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
 fi
 stop_timer
 
-start_timer
-x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
-if [ -e /var/log/nova ]; then chmod 755 /var/log/nova; fi
-if [ -e /var/log/keystone ]; then chmod 755 /var/log/keystone; fi
-if [ -e /var/log/apache2 ]; then chmod 755 /var/log/apache2; fi
-if [ -e /var/log ]; then chmod 755 /var/log; fi
-if [ -e /etc/nova ]; then chmod -R 755 /etc/nova; fi
-if [ -e /etc/keystone ]; then chmod -R 755 /etc/keystone; fi
-if [ -e /etc/glance ]; then chmod -R 755 /etc/glance; fi
-if [ -e /etc/cinder ]; then chmod -R 755 /etc/cinder; fi
-if [ -e /etc/swift ]; then chmod -R 755 /etc/swift; fi
-EOF
-
-cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
-cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
-stop_timer
-
 if [ $retval -eq 0 ]; then
     if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
         github_post_comment ${GIT_COMMENT_URL} "Gate:  Nova AIO (${INSTANCE_IMAGE}): SUCCESS\n * ${BUILD_URL}consoleFull"

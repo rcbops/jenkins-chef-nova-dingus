@@ -144,22 +144,32 @@ function cleanup() {
 
     collect_tasks viciously
 
-    # only leave this on error with noclean set
-    if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
-        if [ -e ${TMPDIR}/nodes ]; then
-            for d in ${TMPDIR}/nodes/*; do
-                source ${d}
-                if [ ${DEPLOY} -ne 1 ]; then
-                    background_task "terminate_server ${NODE_FRIENDLY_NAME}"
-                fi
-            done
-        fi
-        collect_tasks
-    fi
-
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
+        nova list
         echo "We are the parent - cleaning up after the kids"
+        echo "grabbing the log files from the nodes"
+        x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
+chmod -R 755 /var/log
+for i in {swift,keystone,nova,cinder,quantum,haproxy,keepalived,ceilometer,apache2}; do
+  if [[ -d /etc/\${i} ]]; then
+    chmod -R 755 /etc/\${i}
+  fi
+done;
+EOF
+        cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
+        cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
+        collect_tasks
+        echo "log file grabber done"
         if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
+            if [ -e ${TMPDIR}/nodes ]; then
+                for d in ${TMPDIR}/nodes/*; do
+                    source ${d}
+                    if [ ${DEPLOY} -ne 1 ]; then
+                        background_task "terminate_server ${NODE_FRIENDLY_NAME}"
+                    fi
+                done
+            fi
+            collect_tasks
             # don't destroy the network if the cluster is to be left intact
             if [ ${DEPLOY} -ne 1 ]; then
                 destroy_quantum_network
@@ -1095,10 +1105,10 @@ function fetch_file_recursive() {
     local local_path=$3
 
     local ip=$(ip_for_host ${friendly_name})
-    local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+    local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=15"
     local user=${LOGIN}
 
-    scp -ir ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
+    scp -r -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
 }
 
 # we'll just lisp this up a bit - a cluster partial for you, wilk
