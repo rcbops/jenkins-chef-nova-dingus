@@ -4,6 +4,8 @@
 START_TIME=$(date +%s)
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 
+GRAB_LOGFILES_ON_FAILURE=1
+
 source $(dirname $0)/chef-jenkins.sh
 
 print_banner "Initializing Job"

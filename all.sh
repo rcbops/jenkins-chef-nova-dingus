@@ -6,6 +6,8 @@ INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise-v2}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,${PACKAGE_COMPONENT}}
 
+GRAB_LOGFILES_ON_FAILURE=1
+
 source $(dirname $0)/chef-jenkins.sh
 
 print_banner "Initializing Job"
