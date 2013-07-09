@@ -27,6 +27,19 @@ function run_twice() {
     fi
 }
 
+function fixup_log_files_for_fetch() {
+    # exclude sshd files
+    OLD_IFS=${IFS}
+    IFS=","
+    mkdir -p /tmp/logfilecopy
+    for d in ${JOB_ARCHIVE_FILES[@]}; do
+      cp -dR --parents --strip-trailing-slashes ${d} /tmp/logfilecopy/
+    done;
+    IFS=${OLD_IFS}
+    find /tmp/logfilecopy -type d -exec chmod 777 \{\} \;
+    find /tmp/logfilecopy -type f -exec chmod 666 \{\} \;
+}
+
 function prep_chef_client() {
     chef-client -o 'role[base],recipe[build-essential]'
 }

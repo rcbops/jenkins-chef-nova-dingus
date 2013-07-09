@@ -6,6 +6,9 @@ INSTANCE_IMAGE=${INSTANCE_IMAGE:-jenkins-precise-v2}
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 GIT_MASTER_URL=${GIT_MASTER_URL:-https://github.com/rcbops/chef-cookbooks,${PACKAGE_COMPONENT}}
 
+GRAB_LOGFILES_ON_FAILURE=1
+JOB_ARCHIVE_FILES="/var/log,/etc"
+
 source $(dirname $0)/chef-jenkins.sh
 
 print_banner "Initializing Job"
@@ -318,22 +321,6 @@ if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
     retval=1
 fi
 stop_timer
-
-x_with_cluster "Fixing log perms" keystone glance api horizon compute1 compute2  <<EOF
-if [ -e /var/log/nova ]; then chmod 755 /var/log/nova; fi
-if [ -e /var/log/keystone ]; then chmod 755 /var/log/keystone; fi
-if [ -e /var/log/apache2 ]; then chmod 755 /var/log/apache2; fi
-if [ -e /var/log ]; then chmod 755 /var/log; fi
-if [ -e /etc/nova ]; then chmod -R 755 /etc/nova; fi
-if [ -e /etc/keystone ]; then chmod -R 755 /etc/keystone; fi
-if [ -e /etc/glance ]; then chmod -R 755 /etc/glance; fi
-if [ -e /etc/cinder ]; then chmod -R 755 /etc/cinder; fi
-if [ -e /etc/swift ]; then chmod -R 755 /etc/swift; fi
-EOF
-
-cluster_fetch_file "/var/log/{nova,glance,keystone,apache2}/*log" ./logs ${cluster[@]}
-cluster_fetch_file "/var/log/syslog" ./logs ${cluster[@]}
-cluster_fetch_file "/etc/{nova,glance,keystone,cinder,swift}/*" ./logs/config ${cluster[@]}
 
 if [ $retval -eq 0 ]; then
     if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then

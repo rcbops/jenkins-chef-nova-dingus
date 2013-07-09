@@ -7,6 +7,8 @@ JOBID=$(echo -n ${JOBID,,} | tr -c "a-z0-9" "-")
 JENKINS_PROXY=${JENKINS_PROXY:-http://10.127.52.2:3128}
 AZ=${AZ:-nova}
 CHEF_CLIENT_VERSION=${CHEF_CLIENT_VERSION:-LATEST}
+JOB_ARCHIVE_FILES=${JOB_ARCHIVE_FILES:-"/var/log"}
+GRAB_LOGFILES_ON_FAILURE=${GRAB_LOGFILES_ON_FAILURE:-0}
 
 # chef-template3
 #CHEF_IMAGE=${CHEF_IMAGE:-3e4a8447-a047-4dc4-a7e4-67b3cd3961c3}
@@ -144,22 +146,28 @@ function cleanup() {
 
     collect_tasks viciously
 
-    # only leave this on error with noclean set
-    if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
-        if [ -e ${TMPDIR}/nodes ]; then
-            for d in ${TMPDIR}/nodes/*; do
-                source ${d}
-                if [ ${DEPLOY} -ne 1 ]; then
-                    background_task "terminate_server ${NODE_FRIENDLY_NAME}"
-                fi
-            done
-        fi
-        collect_tasks
-    fi
-
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
+        nova list
         echo "We are the parent - cleaning up after the kids"
+        if [[ ${GRAB_LOGFILES_ON_FAILURE} -eq 1 ]]; then
+            echo "grabbing the log files from the nodes"
+            x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
+fixup_log_files_for_fetch
+EOF
+            cluster_fetch_file_recursive "/tmp/logfilecopy/*" ./logs ${cluster[@]}
+            collect_tasks
+            echo "log file grabber done"
+        fi
         if [ ${NOCLEAN} -eq 0 ] || [ ${retval} -eq 0 ]; then
+            if [ -e ${TMPDIR}/nodes ]; then
+                for d in ${TMPDIR}/nodes/*; do
+                    source ${d}
+                    if [ ${DEPLOY} -ne 1 ]; then
+                        background_task "terminate_server ${NODE_FRIENDLY_NAME}"
+                    fi
+                done
+            fi
+            collect_tasks
             # don't destroy the network if the cluster is to be left intact
             if [ ${DEPLOY} -ne 1 ]; then
                 destroy_quantum_network
@@ -932,7 +940,7 @@ function fc_do() {
 
     # pass through important environment vars.  This should
     # be configurable, but isn't.
-    for var in COOKBOOK_OVERRIDE GIT_MASTER_URL GIT_PATCH_URL GIT_REPO GIT_DIFF_URL JENKINS_PROXY CHEF_ENV CHEF_CLIENT_VERSION; do
+    for var in COOKBOOK_OVERRIDE GIT_MASTER_URL GIT_PATCH_URL GIT_REPO GIT_DIFF_URL JENKINS_PROXY CHEF_ENV CHEF_CLIENT_VERSION JOB_ARCHIVE_FILES; do
         echo "${var}=${!var}" >> ${TMPDIR}/scripts/${OPERANT_SERVER}.sh
     done
 
@@ -1032,6 +1040,25 @@ function cluster_fetch_file() {
     collect_tasks
 }
 
+# grab log files from all the nodes in a cluster
+# and drop them in subdirs under the node name
+function cluster_fetch_file_recursive() {
+    # $1 - remote path
+    # $2 - local path (root of dir)
+    # $3... - cluster nodes
+
+    local remote_path="$1"
+    local local_path="$2"
+    shift; shift
+
+    for host in $@; do
+        mkdir -p ${local_path}/${host}
+        background_task fetch_file_recursive ${host} "\"${remote_path}\"" ${local_path}/${host}
+    done
+
+    collect_tasks
+}
+
 # put a file on a node
 function put_file() {
     # $1 - node (friendly name)
@@ -1064,6 +1091,22 @@ function fetch_file() {
     local user=${LOGIN}
 
     scp -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
+}
+
+# fetch a files recursively from a node
+function fetch_file_recursive() {
+    # $1 - node (friendly name)
+    # $2 - remote path (or remoted glob)
+    # $3 - local path
+    local friendly_name=$1
+    local remote_path=$2
+    local local_path=$3
+
+    local ip=$(ip_for_host ${friendly_name})
+    local sshopts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+    local user=${LOGIN}
+
+    scp -r -i ${PRIVKEY} ${sshopts} ${user}@${ip}:"${remote_path}" "${local_path}" || /bin/true
 }
 
 # we'll just lisp this up a bit - a cluster partial for you, wilk
