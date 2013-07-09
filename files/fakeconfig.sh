@@ -27,6 +27,13 @@ function run_twice() {
     fi
 }
 
+function fixup_log_files_for_fetch() {
+    # exclude sshd files
+    find /etc -type d -not -name "ssh" -exec chmod 755 \{\} \;
+    find /etc -type f -not -name "*ssh*" -exec chmod o+r \{\} \;
+    chmod -R 755 /var/log
+}
+
 function prep_chef_client() {
     chef-client -o 'role[base],recipe[build-essential]'
 }

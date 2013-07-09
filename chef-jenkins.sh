@@ -149,12 +149,7 @@ function cleanup() {
         echo "We are the parent - cleaning up after the kids"
         echo "grabbing the log files from the nodes"
         x_with_cluster "Fixing log perms" ${cluster[@]}  <<EOF
-chmod -R 755 /var/log
-for i in {swift,keystone,nova,cinder,quantum,haproxy,keepalived,ceilometer,apache2}; do
-  if [[ -d /etc/\${i} ]]; then
-    chmod -R 755 /etc/\${i}
-  fi
-done;
+fixup_log_files_for_fetch
 EOF
         cluster_fetch_file_recursive "/var/log" ./logs ${cluster[@]}
         cluster_fetch_file_recursive "/etc" ./config ${cluster[@]}
