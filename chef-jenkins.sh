@@ -147,7 +147,6 @@ function cleanup() {
     collect_tasks viciously
 
     if [[ ${PARENT_PID} -eq ${BASHPID} ]]; then
-        nova list
         echo "We are the parent - cleaning up after the kids"
         if [[ ${GRAB_LOGFILES_ON_FAILURE} -eq 1 ]]; then
             echo "grabbing the log files from the nodes"
