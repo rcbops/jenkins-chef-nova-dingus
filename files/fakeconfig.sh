@@ -45,6 +45,11 @@ function fixup_log_files_for_fetch() {
     echo "" >> /tmp/logfilecopy/running-processes.txt
     echo "" >> /tmp/logfilecopy/running-processes.txt
     ps auxwww >> /tmp/logfilecopy/running-processes.txt
+    if [ ${PLATFORM} = "debian" ]; then
+        dpkg -l > /tmp/logfilecopy/installed-packages.txt
+    else
+        rpm -qa > /tmp/logfilecopy/installed-packages.txt
+    fi
 }
 
 function prep_chef_client() {
