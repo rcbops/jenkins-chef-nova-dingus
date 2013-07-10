@@ -28,7 +28,8 @@ function run_twice() {
 }
 
 function fixup_log_files_for_fetch() {
-    # exclude sshd files
+    # copy interesting files/directories to /tmp/logfilecopy so we can
+    # grab it from the jenkins job and post it as an artifact
     OLD_IFS=${IFS}
     IFS=","
     mkdir -p /tmp/logfilecopy
@@ -36,8 +37,14 @@ function fixup_log_files_for_fetch() {
       cp -dR --parents --strip-trailing-slashes ${d} /tmp/logfilecopy/
     done;
     IFS=${OLD_IFS}
+    # fix up the permissions so we can copy it as an unprivileged used
     find /tmp/logfilecopy -type d -exec chmod 777 \{\} \;
     find /tmp/logfilecopy -type f -exec chmod 666 \{\} \;
+    # grab the list of running processes as well
+    pstree > /tmp/logfilecopy/running-processes.txt
+    echo "" >> /tmp/logfilecopy/running-processes.txt
+    echo "" >> /tmp/logfilecopy/running-processes.txt
+    ps auxwww >> /tmp/logfilecopy/running-processes.txt
 }
 
 function prep_chef_client() {
