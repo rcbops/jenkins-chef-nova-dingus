@@ -16,7 +16,7 @@
             }
         },
         "swift": {
-            "swift_hash": "blahblahblahblah",
+            "swift_hash_prefix": "blahblahblahblah",
             "uid": 400,
             "service_pass": "swift",
             "keystone_endpoint": "http://192.168.122.113:35357"
