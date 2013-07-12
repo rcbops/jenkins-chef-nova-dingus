@@ -49,7 +49,7 @@ run_twice install_package git-core
 fixup_hosts_file_for_quantum
 chef11_fixup
 run_twice checkout_cookbooks
-git clone http://github.com/rpedde-rcbops/swift-lite cookbooks/swift-lite
+git clone http://github.com/rcbops-cookbooks/swift-lite cookbooks/swift-lite
 EOF
 background_task "fc_do"
 
