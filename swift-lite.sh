@@ -50,6 +50,7 @@ fixup_hosts_file_for_quantum
 chef11_fixup
 run_twice checkout_cookbooks
 git clone http://github.com/rcbops-cookbooks/swift-lite cookbooks/swift-lite
+cd cookbooks/swift-lite
 if ! ( curl -s ${GIT_PATCH_URL} | git apply ); then
     echo "Unable to merge proposed patch: ${GIT_PATCH_URL}"
     exit 1
