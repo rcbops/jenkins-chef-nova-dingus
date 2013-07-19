@@ -34,7 +34,8 @@ function fixup_log_files_for_fetch() {
     IFS=","
     mkdir -p /tmp/logfilecopy
     for d in ${JOB_ARCHIVE_FILES[@]}; do
-      cp -dR --parents --strip-trailing-slashes ${d} /tmp/logfilecopy/
+      # ignore failures on the copy
+      cp -dR --parents --strip-trailing-slashes ${d} /tmp/logfilecopy/ || :
     done;
     IFS=${OLD_IFS}
     # fix up the permissions so we can copy it as an unprivileged used
