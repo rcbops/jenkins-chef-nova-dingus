@@ -17,16 +17,14 @@ environment = ${CHEF_ENV}
 INSTANCE_IMAGE=${INSTANCE_IMAGE}
 AVAILABILITY_ZONE=${AZ}
 TMPDIR = ${TMPDIR}
-GIT_PATCH_URL = ${GIT_PATCH_URL}
-GIT_MASTER_URL = ${GIT_MASTER_URL}
-We are building for ${PACKAGE_COMPONENT}"
+GIT_PATCH_URL = ${GIT_PATCH_URL}"
 
 rm -rf logs
 mkdir -p logs/run
 exec 9>logs/run/out.log
 BASH_XTRACEFD=9
 set -x
-
+GIT_REPO=#{GIT_REPO:-swift-lite}
 declare -a cluster
 cluster=(keystone proxy1 storage1 storage2 storage3)
 
@@ -51,7 +49,7 @@ chef11_fixup
 run_twice checkout_cookbooks
 git clone http://github.com/rcbops-cookbooks/swift-lite cookbooks/swift-lite
 cd cookbooks/swift-lite
-if ! ( curl -s ${GIT_PATCH_URL} | git apply ); then
+if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_URL} | git apply ); then
     echo "Unable to merge proposed patch: ${GIT_PATCH_URL}"
     exit 1
 fi
