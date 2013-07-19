@@ -16,6 +16,6 @@ json=urllib2.urlopen(url).read()
 profiles = eval(json)
 
 for e in profiles['actions'][0]['parameters']:
-  print "%s=%s" % (e['name'], e['value'])
+  print "export %s=%s" % (e['name'], e['value'])
 
 print "# paste the above in your terminal to re-test"
