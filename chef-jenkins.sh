@@ -845,7 +845,7 @@ function role_add() {
 
     knife node run_list add ${chef_node_name} "${role}" -c ${knife} > /dev/null
 }
-
+alias run_list_add role_add
 function x_with_server() {
     OPERANT_SERVER=$2
     fc_reset_tasks
