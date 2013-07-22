@@ -182,17 +182,14 @@ collect_tasks
 stop_timer
 
 start_timer
-# TODO(breu): this needs to get removed
-if [[ ${PACKAGE_COMPONENT} = "folsom" ]]; then
-  echo "this is your folsom.  there is no other folsom like it."
-  echo "stopping glance-registry and glance-api on api2"
-  x_with_server "stopping glance services on second node" api2 <<EOF
-    monit stop glance-api
-    monit stop glance-registry
+# this is here so we don't get random image failures with the images
+# not syncing from one node to another
+x_with_server "stopping glance services on second node" api2 <<EOF
+  monit stop glance-api
+  monit stop glance-registry
 EOF
-  background_task "fc_do"
-  collect_tasks
-fi
+background_task "fc_do"
+collect_tasks
 stop_timer
 
 retval=0
