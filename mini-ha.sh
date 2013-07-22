@@ -23,6 +23,13 @@ GIT_PATCH_URL = ${GIT_PATCH_URL}
 GIT_MASTER_URL = ${GIT_MASTER_URL}
 We are building for ${PACKAGE_COMPONENT}"
 
+# Update GH issue with console URL at start of test.
+if [ -n "${GIT_COMMENT_URL}" ] && [ "${GIT_COMMENT_URL}" != "noop" ] ; then
+    github_post_comment ${GIT_COMMENT_URL} "Starting Matrix Gate Job: (${INSTANCE_IMAGE}), console URL:  ${BUILD_URL}consoleFull"
+else
+    echo "Skipping initial GitHub comment."
+fi
+
 rm -rf logs
 mkdir -p logs/run
 exec 9>logs/run/out.log
