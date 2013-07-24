@@ -162,8 +162,8 @@ EOF
                 for d in ${TMPDIR}/nodes/*; do
                     source ${d}
                     if [ ${DEPLOY} -ne 1 ]; then
-                        print_banner "Node Data Dump for ${NODE_FRIENDLY_NAME}"
-                        nova show "${NODE_FRIENDLY_NAME}"
+                        print_banner "Node Data Dump for ${NODE_NAME} to build artifact"
+                        nova show "${NODE_FRIENDLY_NAME}" > ./logs/node-data.${NODE_NAME}.txt
                         background_task "terminate_server ${NODE_FRIENDLY_NAME}"
                     fi
                 done
