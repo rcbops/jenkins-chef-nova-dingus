@@ -163,14 +163,14 @@ stop_timer
 
 start_timer
 role_add chef-server api "recipe[kong],recipe[exerstack]"
-role_add chef-server compute1 "role[single-compute]"
-role_add chef-server compute2 "role[single-compute]"
-x_with_cluster "Running chef on all nodes" ${cluster[@]} <<EOF
+x_with_cluster "Finalizing the installation on the first controller" api <<EOF
 chef-client
 EOF
 stop_timer
 
 start_timer
+role_add chef-server compute1 "role[single-compute]"
+role_add chef-server compute2 "role[single-compute]"
 x_with_cluster "Running chef on the compute nodes" compute1 compute2 <<EOF
 chef-client
 EOF
