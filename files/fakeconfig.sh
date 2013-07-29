@@ -175,7 +175,8 @@ function set_package_provider() {
 #        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
         echo "include_only=.edu,.gov" >> /etc/yum/pluginconf.d/fastestmirror.conf
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
-        yum clean all
+#        yum clean all
+        yum clean all && yum clean metadata && yum clean dbcache && yum makecache
     fi
     echo "proxy=${JENKINS_PROXY}" >> /root/.curlrc
     echo "http_proxy = ${JENKINS_PROXY}" >> /root/.wgetrc
