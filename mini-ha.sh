@@ -136,7 +136,7 @@ stop_timer
 
 start_timer
 role_add chef-server api "role[ha-controller1],role[cinder-volume]"
-x_with_cluster "Installing the controller" api <<EOF
+x_with_cluster "Installing the first controller" api <<EOF
 chef-client
 EOF
 stop_timer
@@ -156,15 +156,22 @@ stop_timer
 
 start_timer
 role_add chef-server api2 "role[ha-controller2]"
-x_with_cluster "Installing the controller" api2 <<EOF
+x_with_cluster "Installing the second controller" api2 <<EOF
 chef-client
 EOF
 stop_timer
 
+start_timer
 role_add chef-server api "recipe[kong],recipe[exerstack]"
 role_add chef-server compute1 "role[single-compute]"
 role_add chef-server compute2 "role[single-compute]"
 x_with_cluster "Running chef on all nodes" ${cluster[@]} <<EOF
+chef-client
+EOF
+stop_timer
+
+start_timer
+x_with_cluster "Running chef on the compute nodes" compute1 compute2 <<EOF
 chef-client
 EOF
 stop_timer
