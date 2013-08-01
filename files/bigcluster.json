@@ -62,16 +62,18 @@
             "libvirt": {
                 "virt_type": "qemu"
             },
-            "networks": {
-              "public": {
-                "bridge_dev": "gretap.api",
-                "ipv4_cidr": "192.168.100.0/24",
-                "bridge": "br99",
-                "dns1": "8.8.8.8",
-                "dns2": "8.8.4.4",
-                "label": "public"
-              }
-            }
+            "networks": [
+                {
+                    "network_size": "255",
+                    "bridge_dev": "gretap.api",
+                    "ipv4_cidr": "192.168.100.0/24",
+                    "bridge": "br99",
+                    "dns1": "8.8.8.8",
+                    "dns2": "8.8.4.4",
+                    "num_networks": "1",
+                    "label": "public"
+                }
+            ]
         },
         "glance": {
             "image_upload": false,
