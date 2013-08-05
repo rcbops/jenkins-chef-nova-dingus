@@ -28,15 +28,15 @@
           "mysql-db": "192.168.0.242",
           "config": {
             "192.168.0.240": {
-              "vrid": 10,
-              "network": "public"
-            },
-            "192.168.0.241": {
               "vrid": 11,
               "network": "public"
             },
-            "192.168.0.242": {
+            "192.168.0.241": {
               "vrid": 12,
+              "network": "public"
+            },
+            "192.168.0.242": {
+              "vrid": 10,
               "network": "public"
             }
           }
