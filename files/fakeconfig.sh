@@ -174,7 +174,7 @@ function set_package_provider() {
 #        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
 #        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
         echo "include_only=.edu,.gov" >> /etc/yum/pluginconf.d/fastestmirror.conf
-        echo "exclude=ftp.ussq.iu.edu,mirrors.arsc.edu" >> /etc/yum/pluginconf.d/fastestmirror.conf
+        echo "exclude=ftp.ussq.iu.edu, .arsc.edu" >> /etc/yum/pluginconf.d/fastestmirror.conf
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
 #        yum clean all
         yum clean all && yum clean metadata && yum clean dbcache && yum makecache
