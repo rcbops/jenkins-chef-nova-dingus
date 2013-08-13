@@ -11,18 +11,16 @@
             "libvirt": {
                 "virt_type": "qemu"
             },
-            "networks": [
-                {
-                    "network_size": "255",
-                    "bridge_dev": "eth0",
-                    "ipv4_cidr": "192.168.100.0/24",
-                    "bridge": "br100",
-                    "dns1": "8.8.8.8",
-                    "dns2": "8.8.4.4",
-                    "num_networks": "1",
-                    "label": "public"
-                }
-            ]
+            "networks": {
+              "public": {
+                "bridge_dev": "eth0",
+                "ipv4_cidr": "192.168.100.0/24",
+                "bridge": "br100",
+                "dns1": "8.8.8.8",
+                "dns2": "8.8.4.4",
+                "label": "public"
+              }
+            }
         },
         "glance": {
             "image_upload": true,

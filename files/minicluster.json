@@ -11,21 +11,35 @@
           "theme": "Rackspace"
         },
         "vips": {
-          "nova-api": "192.168.0.240",
-          "nova-ec2-public": "192.168.0.240",
-          "keystone-service-api": "192.168.0.240",
-          "keystone-admin-api": "192.168.0.240",
-          "keystone-internal-api": "192.168.0.240",
-          "cinder-api": "192.168.0.240",
-          "glance-api": "192.168.0.240",
-          "glance-registry": "192.168.0.240",
-          "swift-proxy": "192.168.0.240",
-          "rabbitmq-queue": "192.168.0.241",
+          "rabbitmq-queue": "192.168.0.240",
+          "horizon-dash": "192.168.0.241",
+          "horizon-dash_ssl": "192.168.0.241",
+          "keystone-service-api": "192.168.0.241",
+          "keystone-admin-api": "192.168.0.241",
+          "keystone-internal-api": "192.168.0.241",
+          "nova-xvpvnc-proxy": "192.168.0.241",
+          "nova-api": "192.168.0.241",
+          "nova-ec2-public": "192.168.0.241",
+          "nova-novnc-proxy": "192.168.0.241",
+          "cinder-api": "192.168.0.241",
+          "glance-api": "192.168.0.241",
+          "glance-registry": "192.168.0.241",
+          "swift-proxy": "192.168.0.241",
           "mysql-db": "192.168.0.242",
-          "nova-novnc-proxy": "192.168.0.240",
-          "horizon-dash": "192.168.0.240",
-          "horizon-dash_ssl": "192.168.0.240",
-          "nova-xvpvnc-proxy": "192.168.0.240"
+          "config": {
+            "192.168.0.240": {
+              "vrid": 11,
+              "network": "public"
+            },
+            "192.168.0.241": {
+              "vrid": 12,
+              "network": "public"
+            },
+            "192.168.0.242": {
+              "vrid": 10,
+              "network": "public"
+            }
+          }
         },
         "osops": {
             "apply_patches": true
@@ -48,18 +62,16 @@
             "libvirt": {
                 "virt_type": "qemu"
             },
-            "networks": [
-                {
-                    "network_size": "255",
-                    "bridge_dev": "gretap.api",
-                    "ipv4_cidr": "192.168.100.0/24",
-                    "bridge": "br99",
-                    "dns1": "8.8.8.8",
-                    "dns2": "8.8.4.4",
-                    "num_networks": "1",
-                    "label": "public"
-                }
-            ]
+            "networks":{
+              "public": {
+                "bridge_dev": "gretap.api",
+                "ipv4_cidr": "192.168.100.0/24",
+                "bridge": "br99",
+                "dns1": "8.8.8.8",
+                "dns2": "8.8.4.4",
+                "label": "public"
+              }
+            }
         },
         "glance": {
             "image_upload": true,
