@@ -78,9 +78,10 @@ function setup_quantum_network() {
         exit 1
     fi
     quantum net-create "${JOBID}-mgmt"
-    quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 10.127.52.28 "${JOBID}-mgmt" 192.168.0.0/24
+#    quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 10.127.52.28 "${JOBID}-mgmt" 192.168.0.0/24
+    quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 8.8.8.8 "${JOBID}-mgmt" 192.168.0.0/24
     quantum net-create "${JOBID}-vmnet"
-    quantum subnet-create --name "${JOBID}-vmnet" --no-gateway "${JOBID}-vmnet" 192.168.50.0/24
+    quantum subnet-create --name "${JOBID}-vmnet" --no-gateway --dns-nameserver 8.8.8.8 "${JOBID}-vmnet" 192.168.50.0/24
 }
 
 function destroy_quantum_network() {
@@ -852,7 +853,7 @@ function role_add() {
 
     knife node run_list add ${chef_node_name} "${role}" -c ${knife} > /dev/null
 }
-alias run_list_add role_add
+
 function x_with_server() {
     OPERANT_SERVER=$2
     fc_reset_tasks
