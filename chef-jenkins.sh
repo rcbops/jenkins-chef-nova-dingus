@@ -79,8 +79,8 @@ function setup_quantum_network() {
     fi
     quantum net-create "${JOBID}-mgmt"
     quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 10.127.52.28 "${JOBID}-mgmt" 192.168.0.0/24
-    #quantum net-create "${JOBID}-vmnet"
-    #quantum subnet-create --name "${JOBID}-vmnet" --disable-dhcp --no-gateway "${JOBID}-vmnet" 192.168.1.0/24
+    quantum net-create "${JOBID}-vmnet"
+    quantum subnet-create --name "${JOBID}-vmnet" --no-gateway "${JOBID}-vmnet" 192.168.50.0/24
 }
 
 function destroy_quantum_network() {
@@ -105,8 +105,9 @@ function destroy_quantum_network() {
     if quantum net-show "${JOBID}-mgmt"; then
       quantum net-delete "${JOBID}-mgmt"
     fi
-    #quantum subnet-delete "${JOBID}-vmnet"
-    #quantum net-delete "${JOBID}-vmnet"
+    if quantum net-show "${JOBID}-vmnet"; then
+      quantum net-delete "${JOBID}-vmnet"
+    fi
 }
 
 function start_timer() {
@@ -306,11 +307,11 @@ function boot_and_wait() {
         extra_flags="--key_name=${KEYNAME}"
         QUANTUM_PUBLIC_UUID=$(quantum subnet-show public | awk '{if($2=="network_id") print $4}')
         QUANTUM_MGMT_SUBNET_UUID=$(quantum subnet-show "${JOBID}-mgmt" | awk '{if($2=="network_id") print $4}')
-        #QUANTUM_VMNET_SUBNET_UUID=$(quantum subnet-show "${JOBID}-vmnet" | awk '{if($2=="network_id") print $4}')
+        QUANTUM_VMNET_SUBNET_UUID=$(quantum subnet-show "${JOBID}-vmnet" | awk '{if($2=="network_id") print $4}')
         extra_flags=${extra_flags}" --config-drive=true --nic net-id=${QUANTUM_PUBLIC_UUID}"
         if [[ ${friendly_name} != "chef-server" ]]; then
-            #extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID} --nic net-id=${QUANTUM_VMNET_SUBNET_UUID} --config-drive=true"
-            extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID}"
+            extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID} --nic net-id=${QUANTUM_VMNET_SUBNET_UUID}"
+            #extra_flags=${extra_flags}" --nic net-id=${QUANTUM_MGMT_SUBNET_UUID}"
         fi
     else
         local key_source=${SOURCE_DIR}/file/authorized_keys
@@ -743,6 +744,8 @@ function run_tests() {
         [swift]="swift.sh"
         [cinder]="cinder-cli.sh"
         [ceilometer]="ceilometer.sh"
+        [nova-neutron]="nova-neutron.sh"
+        [neutron]="neutron-cli.sh"
     )
 
     kongtests=(
@@ -751,6 +754,8 @@ function run_tests() {
         [glance-swift]="--glance-swift"
         [cinder]="--cinder"
         [ceilometer]="--ceilometer"
+        [nova-neutron]="--nova-neutron"
+        [neutron]="--neutron"
     )
 
     local exerstack_tests=""

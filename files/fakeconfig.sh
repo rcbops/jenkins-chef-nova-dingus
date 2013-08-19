@@ -134,6 +134,20 @@ function cleanup_metadata_routes() {
     done
 }
 
+function move_ip_to_ovs_bridge() {
+    physdev=$1
+    bridgedev="br-${physdev}"
+    IP=$(ip a show dev $physdev | grep "inet " | awk '{print $2}')
+    ifdown $physdev >/dev/null 2>&1
+    ip l s $physdev up
+    ovs-vsctl add-br $bridgedev
+    ovs-vsctl add-port $bridgedev $physdev
+    ip l s $bridgedev up
+    ip a a ${IP} dev $bridgedev
+}
+
+
+
 function add_repo() {
     # $1 repo description
 

@@ -1,0 +1,104 @@
+{
+    "cookbook_versions": {
+    },
+    "json_class": "Chef::Environment",
+    "override_attributes": {
+       "quantum": {
+          "ovs": {
+            "network_type": "gre",
+            "provider_networks": [
+              {
+              "label": "ph-eth2",
+              "bridge": "br-eth2",
+              "vlans": "1:1000"
+              }
+            ]
+          }
+        },
+        "monitoring": {
+            "metric_provider": "collectd",
+            "procmon_provider": "monit"
+        },
+        "horizon": {
+          "theme": "Rackspace"
+        },
+        "vips": {
+          "rabbitmq-queue": "192.168.0.240",
+          "horizon-dash": "192.168.0.241",
+          "horizon-dash_ssl": "192.168.0.241",
+          "keystone-service-api": "192.168.0.241",
+          "keystone-admin-api": "192.168.0.241",
+          "keystone-internal-api": "192.168.0.241",
+          "nova-xvpvnc-proxy": "192.168.0.241",
+          "nova-api": "192.168.0.241",
+          "nova-ec2-public": "192.168.0.241",
+          "nova-novnc-proxy": "192.168.0.241",
+          "cinder-api": "192.168.0.241",
+          "quantum-api": "192.168.0.241",
+          "glance-api": "192.168.0.241",
+          "glance-registry": "192.168.0.241",
+          "swift-proxy": "192.168.0.241",
+          "mysql-db": "192.168.0.242",
+          "config": {
+            "192.168.0.240": {
+              "vrid": 11,
+              "network": "public"
+            },
+            "192.168.0.241": {
+              "vrid": 12,
+              "network": "public"
+            },
+            "192.168.0.242": {
+              "vrid": 10,
+              "network": "public"
+            }
+          }
+        },
+        "osops": {
+            "apply_patches": true
+        },
+        "cinder": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "keystone": {
+            "config": {
+                "log_verbosity": "DEBUG"
+            }
+        },
+        "nova": {
+            "debug": true,
+            "network": {
+                "multi_host": true,
+                "provider": "quantum"
+            },
+            "libvirt": {
+                "virt_type": "qemu"
+            }
+        },
+        "glance": {
+            "image_upload": true,
+            "api": {
+                "default_store": "file"
+            },
+            "images": [
+                "cirros"
+            ]
+        },
+        "mysql": {
+            "allow_remote_root": true,
+            "root_network_acl": "%"
+        },
+        "osops_networks": {
+            "management": "192.168.0.0/24",
+            "nova": "192.168.0.0/24",
+            "swift": "192.168.0.0/24",
+            "swift-lb": "192.168.0.0/24",
+            "public": "192.168.0.0/24"
+        }
+    },
+    "name": "minicluster-neutron",
+    "chef_type": "environment",
+    "description": ""
+}
