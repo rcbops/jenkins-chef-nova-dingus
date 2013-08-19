@@ -78,10 +78,15 @@ function setup_quantum_network() {
         exit 1
     fi
     quantum net-create "${JOBID}-mgmt"
-#    quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 10.127.52.28 "${JOBID}-mgmt" 192.168.0.0/24
     quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 8.8.8.8 "${JOBID}-mgmt" 192.168.0.0/24
     quantum net-create "${JOBID}-vmnet"
     quantum subnet-create --name "${JOBID}-vmnet" --no-gateway --dns-nameserver 8.8.8.8 "${JOBID}-vmnet" 192.168.50.0/24
+
+    # old values
+    #quantum net-create "${JOBID}-mgmt"
+    #quantum subnet-create --name "${JOBID}-mgmt" --no-gateway --dns-nameserver 10.127.52.28 "${JOBID}-mgmt" 192.168.0.0/24
+    #quantum net-create "${JOBID}-vmnet"
+    #quantum subnet-create --name "${JOBID}-vmnet" --disable-dhcp --no-gateway "${JOBID}-vmnet" 192.168.1.0/24
 }
 
 function destroy_quantum_network() {
