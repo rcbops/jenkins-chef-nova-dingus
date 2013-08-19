@@ -75,8 +75,6 @@ wait_for_rhn
 set_package_provider
 update_package_provider
 run_twice install_package bridge-utils
-run_twice install_package openvswitch-switch
-move_ip_to_ovs_bridge eth2
 EOF
 stop_timer
 
@@ -116,6 +114,27 @@ chef11_fetch_validation_pem $(ip_for_host chef-server)
 copy_file client-template.rb /etc/chef/client-template.rb
 template_client $(ip_for_host chef-server)
 chef-client
+EOF
+stop_timer
+
+# add base role to get the openstack repos added (we need to grab openvswitch for
+# centos from the openstack repo as it's not available in epel)
+ovs_package="openvswitch-switch"
+if [ ${INSTANCE_IMAGE} = "jenkins-centos-v2" ]; then
+    # allow centos to catch up
+    ovs_package="openvswitch"
+fi
+
+start_timer
+for i in ${cluster[@]}; do
+    role_add chef-server $i 'role[base]'
+done
+
+x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
+chef-client
+run_twice install_package ${ovs_package}
+/etc/init.d/openvswitch start || true
+move_ip_to_ovs_bridge eth2
 EOF
 stop_timer
 
