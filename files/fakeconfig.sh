@@ -134,6 +134,20 @@ function cleanup_metadata_routes() {
     done
 }
 
+function move_ip_to_ovs_bridge() {
+    physdev=$1
+    bridgedev="br-${physdev}"
+    IP=$(ip a show dev $physdev | grep "inet " | awk '{print $2}')
+    ifdown $physdev >/dev/null 2>&1
+    ip l s $physdev up
+    ovs-vsctl add-br $bridgedev
+    ovs-vsctl add-port $bridgedev $physdev
+    ip l s $bridgedev up
+    ip a a ${IP} dev $bridgedev
+}
+
+
+
 function add_repo() {
     # $1 repo description
 
@@ -173,8 +187,8 @@ function set_package_provider() {
 #        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/epel-testing.repo
 #        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel-testing.repo
 #        sed -i 's/download.fedoraproject.org\/pub/mirror.rackspace.com/g' /etc/yum.repos.d/epel-testing.repo
-        echo "include_only=.edu,.gov" >> /etc/yum/pluginconf.d/fastestmirror.conf
-        echo "exclude=ftp.ussq.iu.edu, .arsc.edu" >> /etc/yum/pluginconf.d/fastestmirror.conf
+#        echo "include_only=.edu,.gov" >> /etc/yum/pluginconf.d/fastestmirror.conf
+        echo "exclude=.iu.edu, .arsc.edu" >> /etc/yum/pluginconf.d/fastestmirror.conf
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
 #        yum clean all
         yum clean all && yum clean metadata && yum clean dbcache && yum makecache
