@@ -12,7 +12,7 @@ source $(dirname $0)/chef-jenkins.sh
 print_banner "Initializing Job"
 init
 
-CHEF_ENV="minicluster"
+CHEF_ENV="minicluster-${PACKAGE_COMPONENT}"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
