@@ -45,6 +45,13 @@
             "apply_patches": true
         },
         "cinder": {
+            "storage": {
+                "lvm": {
+                    "conf": {
+                        "device_filter": "[ 'a|^/dev/vd.*$|', 'r/.*/' ]"
+                    }
+                }
+            },
             "config": {
                 "log_verbosity": "DEBUG"
             }
