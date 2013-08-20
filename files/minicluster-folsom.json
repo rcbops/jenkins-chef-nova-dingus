@@ -96,7 +96,7 @@
             "public": "192.168.0.0/24"
         }
     },
-    "name": "minicluster",
+    "name": "minicluster-folsom",
     "chef_type": "environment",
     "description": ""
 }
