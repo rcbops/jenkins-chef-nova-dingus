@@ -129,15 +129,15 @@ set_environment_attribute chef-server swift-private-cloud "override_attributes/s
 set_environment_attribute chef-server swift-private-cloud "override_attributes/swift-private-cloud/keystone/swift_internal_url" "\"http://$(ip_for_host proxy1):8080/v1/AUTH_%(tenant_id)s\""
 set_environment_attribute chef-server swift-private-cloud "override_attributes/swift-private-cloud/keystone/swift_public_url" "\"http://$(ip_for_host proxy1):8080/v1/AUTH_%(tenant_id)s\""
 
-run_list_add chef-server admin1 "role[spc-starter-controller]"
+role_add chef-server admin1 "role[spc-starter-controller]"
 x_with_cluster "installing admin node" admin1 <<EOF
 chef-client
 EOF
 
-run_list_add chef-server proxy1 "role[spc-starter-proxy]"
+role_add chef-server proxy1 "role[spc-starter-proxy]"
 
 for storage in storage{1..3}; do
-        run_list_add chef-server ${storage} "role[spc-starter-storage]"
+        role_add chef-server ${storage} "role[spc-starter-storage]"
 done
 
 x_with_cluster "installing swifteses" proxy1 storage{1..3} <<EOF
