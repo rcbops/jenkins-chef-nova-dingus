@@ -2,7 +2,6 @@
 
 
 START_TIME=$(date +%s)
-PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
 CHEF_IMAGE=chef-template5
 
 JOB_NAME="spc"
