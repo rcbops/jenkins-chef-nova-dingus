@@ -17,6 +17,9 @@
                 "swift_internal_url": "", 
                 "swift_public_url": ""
             }, 
+	    "dispersion": {
+		"dis_key": "notautomaticallycreated"
+	    },	    
             "network": {
                 "exnet": "192.168.0.0/24", 
                 "management": "192.168.0.0/24"
