@@ -101,9 +101,6 @@ print_banner "Setting up the chef environment"
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 create_chef_environment chef-server swift-private-cloud
-
-# Set the package_component environment variable (not really needed in grizzly but no matter)
-knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 stop_timer
 
 # add_chef_clients chef-server ${cluster[@]} # what does this do?
