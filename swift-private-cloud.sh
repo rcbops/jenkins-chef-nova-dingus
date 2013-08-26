@@ -46,12 +46,12 @@ flush_iptables
 run_twice install_package git-core
 fixup_hosts_file_for_quantum
 chef11_fixup
-run_twice checkout_cookbooks
+#run_twice checkout_cookbooks
 sudo apt-get install -y ruby1.9.3 libxml2-dev libxslt-dev build-essential libz-dev
-git clone http://github.com/rcbops-cookbooks/swift-lite cookbooks/swift-lite
-git clone http://github.com/rcbops-cookbooks/swift-private-cloud cookbooks/swift-private-cloud
-
-pushd "cookbooks/${GIT_REPO}"
+mkdir /root/cookbooks
+git clone http://github.com/rcbops-cookbooks/swift-lite /root/cookbooks/swift-lite
+git clone http://github.com/rcbops-cookbooks/swift-private-cloud /root/cookbooks/swift-private-cloud
+pushd "/root/cookbooks/${GIT_REPO}"
 if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_URL} | git apply ); then
     echo "Unable to merge proposed patch: ${GIT_PATCH_URL}"
     exit 1
@@ -74,9 +74,9 @@ start_timer
 x_with_server "uploading the cookbooks" "chef-server" <<EOF
 #run_twice upload_cookbooks
 #run_twice upload_roles
-run_twice upload_roles /root/chef-cookbooks/cookbooks/swift-lite/contrib/roles
-run_twice upload_roles /root/chef-cookbooks/cookbooks/swift-private-cloud/roles
-cd /root/chef-cookbooks/cookbooks/swift-private-cloud
+run_twice upload_roles /root/cookbooks/swift-lite/contrib/roles
+run_twice upload_roles /root/cookbooks/swift-private-cloud/roles
+cd /root/cookbooks/swift-private-cloud
 gem install berkshelf
 berks install
 berks upload
