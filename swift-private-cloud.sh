@@ -52,7 +52,7 @@ mkdir /root/cookbooks
 git clone http://github.com/rcbops-cookbooks/swift-lite /root/cookbooks/swift-lite
 git clone http://github.com/rcbops-cookbooks/swift-private-cloud /root/cookbooks/swift-private-cloud
 pushd "/root/cookbooks/${GIT_REPO}"
-if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_URL} | git apply ); then
+if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_URL} | git apply --ignore-whitespace); then
     echo "Unable to merge proposed patch: ${GIT_PATCH_URL}"
     exit 1
 fi
