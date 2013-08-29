@@ -45,6 +45,13 @@
             "apply_patches": true
         },
         "cinder": {
+            "storage": {
+                "lvm": {
+                    "conf": {
+                        "device_filter": "[ 'a|^/dev/vd.*$|', 'r/.*/' ]"
+                    }
+                }
+            },
             "config": {
                 "log_verbosity": "DEBUG"
             }
@@ -94,7 +101,7 @@
             "public": "192.168.0.0/24"
         }
     },
-    "name": "minicluster",
+    "name": "minicluster-grizzly",
     "chef_type": "environment",
     "description": ""
 }

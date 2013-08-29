@@ -3,18 +3,6 @@
     },
     "json_class": "Chef::Environment",
     "override_attributes": {
-       "quantum": {
-          "ovs": {
-            "network_type": "gre",
-            "provider_networks": [
-              {
-              "label": "ph-eth2",
-              "bridge": "br-eth2",
-              "vlans": "1:1000"
-              }
-            ]
-          }
-        },
         "monitoring": {
             "metric_provider": "collectd",
             "procmon_provider": "monit"
@@ -34,7 +22,6 @@
           "nova-ec2-public": "192.168.0.241",
           "nova-novnc-proxy": "192.168.0.241",
           "cinder-api": "192.168.0.241",
-          "quantum-api": "192.168.0.241",
           "glance-api": "192.168.0.241",
           "glance-registry": "192.168.0.241",
           "swift-proxy": "192.168.0.241",
@@ -58,13 +45,6 @@
             "apply_patches": true
         },
         "cinder": {
-            "storage": {
-                "lvm": {
-                    "conf": {
-                        "device_filter": "[ 'a|^/dev/vd.*$|', 'r/.*/' ]"
-                    }
-                }
-            },
             "config": {
                 "log_verbosity": "DEBUG"
             }
@@ -77,12 +57,23 @@
         "nova": {
             "debug": true,
             "network": {
-                "multi_host": true,
-                "provider": "quantum"
+                "multi_host": true
             },
             "libvirt": {
                 "virt_type": "qemu"
-            }
+            },
+            "networks": [
+                {
+                    "network_size": "255",
+                    "bridge_dev": "gretap.api",
+                    "ipv4_cidr": "192.168.100.0/24",
+                    "bridge": "br99",
+                    "dns1": "8.8.8.8",
+                    "dns2": "8.8.4.4",
+                    "num_networks": "1",
+                    "label": "public"
+                }
+            ]
         },
         "glance": {
             "image_upload": true,
@@ -105,7 +96,7 @@
             "public": "192.168.0.0/24"
         }
     },
-    "name": "minicluster-neutron",
+    "name": "minicluster-folsom",
     "chef_type": "environment",
     "description": ""
 }
