@@ -120,7 +120,7 @@ stop_timer
 start_timer
 x_with_cluster "setting up cinder-volumes vg on api node for cinder" api <<EOF
 install_package lvm2
-umount /mnt
+unmount_filesystem /mnt
 pvcreate /dev/vdb
 vgcreate cinder-volumes /dev/vdb
 EOF
