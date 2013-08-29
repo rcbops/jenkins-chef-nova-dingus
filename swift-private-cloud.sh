@@ -179,7 +179,7 @@ background_task "fc_do"
 # ... and in parallel, format the drives and mount
 x_with_cluster "Fixing up swift disks... under the sky" storage{1..3} <<EOF
 install_package xfsprogs
-umount /mnt || /bin/true
+unmount_filesystem /mnt
 parted -s /dev/vdb mklabel msdos
 parted -s /dev/vdb mkpart primary xfs 1M 100%
 mkfs.xfs -f -i size=512 /dev/vdb1
