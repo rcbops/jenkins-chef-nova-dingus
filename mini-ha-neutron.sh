@@ -117,14 +117,6 @@ chef-client
 EOF
 stop_timer
 
-# add base role to get the openstack repos added (we need to grab openvswitch for
-# centos from the openstack repo as it's not available in epel)
-ovs_package="openvswitch-switch"
-if [ ${INSTANCE_IMAGE} = "jenkins-centos-v2" ]; then
-    # allow centos to catch up
-    ovs_package="openvswitch"
-fi
-
 start_timer
 for i in ${cluster[@]}; do
     role_add chef-server $i 'role[base]'
@@ -132,7 +124,7 @@ done
 
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 chef-client
-run_twice install_package ${ovs_package}
+install_ovs_package
 /etc/init.d/openvswitch start || true
 move_ip_to_ovs_bridge eth2
 EOF
@@ -142,7 +134,7 @@ stop_timer
 start_timer
 x_with_cluster "setting up cinder-volumes vg on api node for cinder" api <<EOF
 install_package lvm2
-umount /mnt
+unmount_filesystem /mnt
 pvcreate /dev/vdb
 vgcreate cinder-volumes /dev/vdb
 EOF

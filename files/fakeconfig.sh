@@ -27,6 +27,18 @@ function run_twice() {
     fi
 }
 
+function unmount_filesystem() {
+    if [[ -z $1 ]]; then
+        echo "no mount point specified"
+    else
+        if $(mountpoint -q $1); then
+            umount $1
+        else
+           echo "unmount_filesystem: $1 is not mounted"
+        fi
+    fi
+}
+
 function fixup_log_files_for_fetch() {
     # copy interesting files/directories to /tmp/logfilecopy so we can
     # grab it from the jenkins job and post it as an artifact
@@ -203,6 +215,14 @@ function update_package_provider() {
         DEBIAN_FRONTEND=noninteractive apt-get update
     elif [ $PLATFORM = "centos" ]; then
         echo "skipping on non-debian systems"
+    fi
+}
+
+function install_ovs_package() {
+    if [ $PLATFORM = "debian" ]; then
+        install_package openvswitch-switch
+    else
+        install_package openvswitch
     fi
 }
 
