@@ -62,7 +62,8 @@
                 "lvm": {
                     "conf": {
                         "device_filter": "[ 'a|^/dev/vd.*$|', 'r/.*/' ]"
-                    }
+                    },
+                    "volume_clear": "none"
                 }
             },
             "config": {
