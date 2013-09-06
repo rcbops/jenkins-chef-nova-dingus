@@ -9,7 +9,7 @@
         },
         "yum": {
           "epel": {
-            "key_url": "http://dl.fedoraproject.org/pub/epel/#{node['yum']['epel']['key']}"
+            "key_url": "https://dl.fedoraproject.org/pub/epel/#{node['yum']['epel']['key']}"
           }
         },
         "vips": {
