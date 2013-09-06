@@ -7,8 +7,10 @@
             "metric_provider": "collectd",
             "procmon_provider": "monit"
         },
-        "horizon": {
-          "theme": "Rackspace"
+        "yum": {
+          "epel": {
+            "key_url": "http://dl.fedoraproject.org/pub/epel/#{node['yum']['epel']['key']}"
+          }
         },
         "vips": {
           "rabbitmq-queue": "192.168.0.240",
