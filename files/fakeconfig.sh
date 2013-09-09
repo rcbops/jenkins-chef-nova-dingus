@@ -190,6 +190,8 @@ function set_package_provider() {
     elif [ $PLATFORM = "centos" ]; then
         # whack the cron jobs so they don't start on system boot
         chmod 000 /etc/cron.{d,daily,monthly,hourly,monthly}/*
+        # going nuclear here
+        rm -rf /var/cache/yum
 #        sed -i '/^mirrorlist.*/d' /etc/yum.repos.d/CentOS-Base.repo
 #        sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
 #        sed -i 's/mirror.centos.org\/centos/mirror.rackspace.com\/CentOS/g' /etc/yum.repos.d/CentOS-Base.repo
@@ -202,8 +204,7 @@ function set_package_provider() {
 #        echo "include_only=.edu,.gov" >> /etc/yum/pluginconf.d/fastestmirror.conf
         echo "exclude=.iu.edu, .arsc.edu" >> /etc/yum/pluginconf.d/fastestmirror.conf
         echo "proxy=${JENKINS_PROXY}" >> /etc/yum.conf
-#        yum clean all
-        yum clean all && yum clean metadata && yum clean dbcache && yum makecache
+        yum makecache
     fi
     echo "proxy=${JENKINS_PROXY}" >> /root/.curlrc
     echo "http_proxy = ${JENKINS_PROXY}" >> /root/.wgetrc
