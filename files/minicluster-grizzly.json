@@ -64,6 +64,9 @@
             }
         },
         "nova": {
+            "config": {
+              "force_config_drive": true
+            },
             "debug": true,
             "network": {
                 "multi_host": true
