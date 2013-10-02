@@ -52,7 +52,7 @@ mkdir /root/cookbooks
 git clone http://github.com/rcbops-cookbooks/swift-lite /root/cookbooks/swift-lite
 git clone http://github.com/rcbops-cookbooks/swift-private-cloud /root/cookbooks/swift-private-cloud
 pushd "/root/cookbooks/${GIT_REPO}"
-if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_URL} | git apply -v); then
+if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_RUL} | git apply -v); then
     echo "Unable to merge proposed patch: ${GIT_PATCH_URL}"
     exit 1
 fi
@@ -80,6 +80,7 @@ cd /root/cookbooks/swift-private-cloud
 gem install berkshelf
 berks install
 berks upload
+knife cookbook upload --force -o "/root/cookbooks" "${GIT_REPO}"
 EOF
 background_task "fc_do"
 
@@ -126,6 +127,7 @@ set_environment_attribute chef-server swift-private-cloud "override_attributes/s
 set_environment_attribute chef-server swift-private-cloud "override_attributes/swift-private-cloud/keystone/swift_public_url" "\"http://$(ip_for_host proxy1):8080/v1/AUTH_%(tenant_id)s\""
 
 role_add chef-server admin1 "role[spc-starter-controller]"
+
 x_with_cluster "installing admin node" admin1 <<EOF
 chef-client
 EOF
@@ -142,7 +144,7 @@ EOF
 
 # TODO (wilk): test actual swift private cloud helpers and so on
 # on the proxy, build up some rings.
-x_with_server "three rings for the elven kings" proxy1 <<EOF
+x_with_server "three rings for the elven kings" admin1 <<EOF
 cd /etc/swift
 
 swift-ring-builder object.builder create 8 3 0
@@ -189,9 +191,9 @@ chown -R swift: /srv/node/disk1
 EOF
 
 mkdir -p ${TMPDIR}/rings
-fetch_file proxy1 "/tmp/rings/*.ring.gz" ${TMPDIR}/rings
+fetch_file admin1 "/tmp/rings/*.ring.gz" ${TMPDIR}/rings
 
-x_with_cluster "copying ring data" storage{1..3} <<EOF
+x_with_cluster "copying ring data" storage{1..3} proxy1 <<EOF
 copy_file ${TMPDIR}/rings/account.ring.gz /etc/swift
 copy_file ${TMPDIR}/rings/container.ring.gz /etc/swift
 copy_file ${TMPDIR}/rings/object.ring.gz /etc/swift
@@ -199,10 +201,16 @@ chown -R swift: /etc/swift
 EOF
 
 # now start all the services
-x_with_cluster "starting services" storage{1..3} proxy1 admin1 <<EOF
+x_with_cluster "starting services" storage{1..3} proxy1 <<EOF
 chef-client
 EOF
+fc_do
 
+x_with_server "Finalizing install by running chef on admin1" admin1 <<EOF
+sleep 10
+chef-client
+EOF
+fc_do
 
 cat > ${TMPDIR}/config.ini <<EOF2
 [KongRequester]
@@ -215,7 +223,7 @@ EOF2
 
 
 # install kong and exerstack and do the thangs
-x_with_server "Installing kong and exerstack" proxy1 <<EOF
+x_with_server "Installing kong and exerstack" admin1 <<EOF
 cd /root
 install_package git
 git clone https://github.com/rcbops/kong /root/kong
@@ -233,15 +241,47 @@ export OS_REGION_NAME=RegionOne
 export OS_VERSION=2.0
 EOF2
 
+copy_file ${TMPDIR}/config.ini /root/kong/etc
+
+EOF
+fc_do
+
+# running tests
+x_with_server "Running tests on admin1" admin1 <<EOF
+
 pushd /root/exerstack
 ./exercise.sh grizzly swift.sh
 popd
 
-copy_file ${TMPDIR}/config.ini /root/kong/etc
 
 pushd /root/kong
 ONESHOT=1 ./run_tests.sh -V --version grizzly --swift --keystone
 popd
+
+# verify swiftops user can dsh to all nodes
+su swiftops -c "dsh -Mcg swift hostname" | wc -l | grep ^$[ ${#cluster[@]} - 1 ]
+
+# verify swift-recon works
+swift-recon --md5  | grep '^3/3 hosts matched'
+
+#verify object expirer is running on admin node
+#if [[ "$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
+#   echo "Swift object expirer is not running on admin node" 1>&2
+#   exit 1
+#fi
+
+# verify syslog is configured to log to admin node
+#su swiftops -c "dsh -Mcg swift sudo swift-init all restart"
+#if [[ "$(ls /var/log/swift | wc -l)" -lt 6 ]]; then
+#   echo "Expecting at least five files in /var/log/swift" 1>&2
+#   exit 1
+#fi
+
+# verify dispersion reports are configured
+
+# verify mail configuration
+
+# verify ntp is configured on all nodes
 
 EOF
 
