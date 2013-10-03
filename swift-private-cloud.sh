@@ -3,7 +3,6 @@
 
 START_TIME=$(date +%s)
 CHEF_IMAGE=chef-template5
-
 JOB_NAME="spc"
 source $(dirname $0)/chef-jenkins.sh
 
@@ -47,7 +46,7 @@ run_twice install_package git-core
 fixup_hosts_file_for_quantum
 chef11_fixup
 #run_twice checkout_cookbooks
-sudo apt-get install -y ruby1.9.3 libxml2-dev libxslt-dev build-essential libz-dev
+run_twice install_package ruby1.9.3 libxml2-dev libxslt-dev build-essential libz-dev
 mkdir /root/cookbooks
 git clone http://github.com/rcbops-cookbooks/swift-lite /root/cookbooks/swift-lite
 git clone http://github.com/rcbops-cookbooks/swift-private-cloud /root/cookbooks/swift-private-cloud
@@ -259,12 +258,12 @@ ONESHOT=1 ./run_tests.sh -V --version grizzly --swift --keystone
 popd
 
 # verify swiftops user can dsh to all nodes
-su swiftops -c "dsh -Mcg swift hostname" | wc -l | grep ^$[ ${#cluster[@]} - 1 ]
+#su swiftops -c "dsh -Mcg swift hostname" | wc -l | grep ^$[ ${#cluster[@]} - 1 ]
 
 # verify swift-recon works
 swift-recon --md5  | grep '^3/3 hosts matched'
 
-#verify object expirer is running on admin node
+# verify object expirer is running on admin node
 #if [[ "$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
 #   echo "Swift object expirer is not running on admin node" 1>&2
 #   exit 1
