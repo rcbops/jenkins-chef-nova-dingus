@@ -264,10 +264,10 @@ popd
 swift-recon --md5  | grep '^3/3 hosts matched'
 
 # verify object expirer is running on admin node
-#if [[ "$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
-#   echo "Swift object expirer is not running on admin node" 1>&2
-#   exit 1
-#fi
+if [[ "$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
+   echo "Swift object expirer is not running on admin node" 1>&2
+   exit 1
+fi
 
 # verify syslog is configured to log to admin node
 #su swiftops -c "dsh -Mcg swift sudo swift-init all restart"
