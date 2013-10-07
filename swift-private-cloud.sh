@@ -71,22 +71,17 @@ stop_timer
 
 start_timer
 x_with_server "uploading the cookbooks" "chef-server" <<EOF
-if !  [[ -d /tmp/logfilecopy ]]; then
-   mkdir /tmp/logfilecopy
-fi
-
 #run_twice upload_cookbooks
 #run_twice upload_roles
 run_twice upload_roles /root/cookbooks/swift-lite/contrib/roles
 run_twice upload_roles /root/cookbooks/swift-private-cloud/roles
 cd /root/cookbooks/swift-private-cloud
 gem install berkshelf
-berks install 2>&1 | tee -a /tmp/logfilecopy/berks.txt
-berks upload  2>&1 | tee -a /tmp/logfilecopy/berks.txt
-knife cookbook upload --force -o "/root/cookbooks" "${GIT_REPO}" 2>&1 | tee -a /tmp/logfilecopy/berks.txt
+berks install
+berks upload
+knife cookbook upload --force -o "/root/cookbooks" "${GIT_REPO}"
 EOF
 background_task "fc_do"
-
 
 x_with_cluster "Cluster booted.  Setting up the package providers and vpn thingy..." ${cluster[@]} <<EOF
 plumb_quantum_networks eth1
