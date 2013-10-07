@@ -84,6 +84,9 @@ gem install berkshelf
 berks install 2>&1 | tee -a /tmp/logfilecopy/berks.txt
 berks upload  2>&1 | tee -a /tmp/logfilecopy/berks.txt
 knife cookbook upload --force -o "/root/cookbooks" "${GIT_REPO}" 2>&1 | tee -a /tmp/logfilecopy/berks.txt
+if [[ -f Berksfile.lock ]]; then
+    cp Berksfile.lock /tmp/logfilecopy/Berksfile.lock
+fi
 EOF
 background_task "fc_do"
 
