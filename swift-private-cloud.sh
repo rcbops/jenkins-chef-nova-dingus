@@ -285,11 +285,16 @@ if [[ "\$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
 fi
 
 # verify syslog is configured to log to admin node
-#su swiftops -c "dsh -Mcg swift sudo swift-init all restart"
-#if [[ "\$(ls /var/log/swift | wc -l)" -lt 6 ]]; then
-#   echo "Expecting at least five files in /var/log/swift" 1>&2
-#   exit 1
-#fi
+if [[ -e "/etc/redhat-release" ]]; then
+    su swiftops -c "pdsh -g swift sudo swift-init all restart"
+else
+    su swiftops -c "dsh -Mcg swift sudo swift-init all restart"
+fi
+
+if [[ "\$(ls /var/log/swift | wc -l)" -lt 5 ]]; then
+   echo "Expecting at least five files in /var/log/swift" 1>&2
+   exit 1
+fi
 
 # verify mail configuration
 
