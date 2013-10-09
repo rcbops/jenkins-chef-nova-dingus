@@ -258,29 +258,41 @@ ONESHOT=1 ./run_tests.sh -V --version grizzly --swift --keystone
 popd
 
 # verify swiftops user can dsh to all nodes
-#su swiftops -c "dsh -Mcg swift hostname" | wc -l | grep ^$[ ${#cluster[@]} - 1 ]
+if [[ -e "/etc/redhat-release" ]]; then
+    su swiftops -c "pdsh -g swift hostname" | wc -l | grep ^$[ ${#cluster[@]} - 1 ]
+else
+    su swiftops -c "dsh -Mcg swift hostname" | wc -l | grep ^$[ ${#cluster[@]} - 1 ]
+fi
 
 # verify swift-recon works
 swift-recon --md5  | grep '^3/3 hosts matched'
 
+# verify dispersion reports are configured
+swift-dispersion-populate
+swift-dispersion-report | grep '100.00%' | grep '6 of 6'
+
+# verify ntp is configured on all nodes
+num_ntpclients="\$(echo 'monlist' | ntpdc  | grep 192.168 | wc -l)"
+if [[ "\$num_ntpclients" -ne 4 ]]; then
+    echo "Expected 4 ntp clients on 192.168 network, found \${num_ntpclients}" 1>&2
+    exit 1
+fi
+
 # verify object expirer is running on admin node
-if [[ "$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
+if [[ "\$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
    echo "Swift object expirer is not running on admin node" 1>&2
    exit 1
 fi
 
 # verify syslog is configured to log to admin node
 #su swiftops -c "dsh -Mcg swift sudo swift-init all restart"
-#if [[ "$(ls /var/log/swift | wc -l)" -lt 6 ]]; then
+#if [[ "\$(ls /var/log/swift | wc -l)" -lt 6 ]]; then
 #   echo "Expecting at least five files in /var/log/swift" 1>&2
 #   exit 1
 #fi
 
-# verify dispersion reports are configured
-
 # verify mail configuration
 
-# verify ntp is configured on all nodes
 
 EOF
 
