@@ -51,7 +51,7 @@ mkdir /root/cookbooks
 git clone http://github.com/rcbops-cookbooks/swift-lite /root/cookbooks/swift-lite
 git clone http://github.com/rcbops-cookbooks/swift-private-cloud /root/cookbooks/swift-private-cloud
 pushd "/root/cookbooks/${GIT_REPO}"
-if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_RUL} | git apply -v); then
+if [[ -n "${GIT_PATCH_URL}" ]] && ! ( curl -s ${GIT_PATCH_URL} | git apply -v); then
     echo "Unable to merge proposed patch: ${GIT_PATCH_URL}"
     exit 1
 fi
@@ -278,12 +278,6 @@ if [[ "\$num_ntpclients" -ne 4 ]]; then
     exit 1
 fi
 
-# verify object expirer is running on admin node
-if [[ "\$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
-   echo "Swift object expirer is not running on admin node" 1>&2
-   exit 1
-fi
-
 # verify syslog is configured to log to admin node
 if [[ -e "/etc/redhat-release" ]]; then
     su swiftops -c "pdsh -g swift sudo swift-init all restart"
@@ -299,6 +293,11 @@ fi
 # verify mail configuration
 
 
+# verify object expirer is running on admin node
+if [[ "\$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
+   echo "Swift object expirer is not running on admin node" 1>&2
+   exit 1
+fi
 EOF
 
 fc_do
