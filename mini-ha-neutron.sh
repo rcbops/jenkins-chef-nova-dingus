@@ -208,4 +208,12 @@ fi
 
 END_TIME=$(date +%s)
 print_banner "Total time taken was approx $(( (END_TIME-START_TIME)/60 )) minutes"
+
+if [[ -e /usr/bin/figlet ]]; then
+  if [[ $retval == 0 ]]; then
+    figlet 'SUCCESS!'
+  else
+    figlet 'FAILURE!'
+  fi
+fi
 exit $retval
