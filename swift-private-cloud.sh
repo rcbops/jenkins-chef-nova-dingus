@@ -236,7 +236,6 @@ fc_do
 
 # running tests
 x_with_server "Running tests on admin1" admin1 <<EOF
-
 pushd /root/exerstack
 ./exercise.sh grizzly swift.sh
 popd
@@ -279,8 +278,19 @@ if [[ "\$(ls /var/log/swift | wc -l)" -lt 5 ]]; then
    exit 1
 fi
 
-# verify mail configuration
+# verify that servers in the swift network can relay through admin
+iptables -I OUTPUT 1 -p tcp -m tcp --dport 25 -j REJECT
+if [[ -e "/etc/redhat-release" ]]; then
+  su swiftops -c "pdsh -g swift mailx -s testing test@rackspace.com \</dev/null"  
+else
+  su swiftops -c "dsh -Mcg swift mailx -s testing test@rackspace.com \</dev/null"
+fi
+sleep 5
 
+if [[ "\$(iptables -L OUTPUT 1 -v | xargs | cut -d' ' -f1)" -eq 0 ]]; then
+  echo "Mail was not successfully relayed" 1>&2
+  exit 1
+fi
 
 # verify object expirer is running on admin node
 if [[ "\$(pgrep -f object-expirer | wc -l)" -eq 0 ]]; then
