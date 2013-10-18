@@ -167,11 +167,6 @@ swift-ring-builder container.builder rebalance
 swift-ring-builder account.builder rebalance
 
 chown -R swift: .
-mkdir -p /tmp/rings
-cp {account,object,container}.ring.gz /tmp/rings
-
-chown -R ubuntu: /tmp/rings
-
 exit 0
 EOF
 
@@ -189,14 +184,8 @@ mount /dev/vdb1 /srv/node/disk1 -o noatime,nodiratime,nobarrier,logbufs=8
 chown -R swift: /srv/node/disk1
 EOF
 
-mkdir -p ${TMPDIR}/rings
-fetch_file admin1 "/tmp/rings/*.ring.gz" ${TMPDIR}/rings
-
 x_with_cluster "copying ring data" storage{1..3} proxy1 <<EOF
-copy_file ${TMPDIR}/rings/account.ring.gz /etc/swift
-copy_file ${TMPDIR}/rings/container.ring.gz /etc/swift
-copy_file ${TMPDIR}/rings/object.ring.gz /etc/swift
-chown -R swift: /etc/swift
+/usr/bin/swift-ring-minion-server -f -o
 EOF
 
 # now start all the services
