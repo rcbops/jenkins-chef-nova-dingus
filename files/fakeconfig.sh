@@ -222,6 +222,7 @@ function update_package_provider() {
 function install_ovs_package() {
     if [ $PLATFORM = "debian" ]; then
         install_package openvswitch-switch
+        install_package openvswitch-datapath-dkms
     else
         install_package openvswitch
     fi
