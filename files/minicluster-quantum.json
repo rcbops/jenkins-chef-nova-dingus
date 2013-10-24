@@ -3,7 +3,7 @@
     },
     "json_class": "Chef::Environment",
     "override_attributes": {
-       "neutron": {
+       "quantum": {
           "ovs": {
             "network_type": "gre",
             "provider_networks": [
@@ -34,7 +34,7 @@
           "nova-ec2-public": "192.168.0.241",
           "nova-novnc-proxy": "192.168.0.241",
           "cinder-api": "192.168.0.241",
-          "neutron-api": "192.168.0.241",
+          "quantum-api": "192.168.0.241",
           "glance-api": "192.168.0.241",
           "glance-registry": "192.168.0.241",
           "swift-proxy": "192.168.0.241",
@@ -82,7 +82,7 @@
             "debug": true,
             "network": {
                 "multi_host": true,
-                "provider": "neutron"
+                "provider": "quantum"
             },
             "libvirt": {
                 "virt_type": "qemu"
