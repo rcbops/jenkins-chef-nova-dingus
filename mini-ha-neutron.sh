@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+NEUTRON_NAME=neutron
+if [ "${0##*/}" = "mini-ha-quantum.sh" ]; then
+    NEUTRON_NAME=quantum
+fi
 
 START_TIME=$(date +%s)
 PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
@@ -12,7 +16,7 @@ source $(dirname $0)/chef-jenkins.sh
 print_banner "Initializing Job"
 init
 
-CHEF_ENV="minicluster-neutron"
+CHEF_ENV="minicluster-${NEUTRON_NAME}"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
@@ -188,7 +192,7 @@ stop_timer
 retval=0
 
 # setup test list
-declare -a testlist=(cinder nova-neutron neutron glance keystone)
+declare -a testlist=(cinder nova-${NEUTRON_NAME} ${NEUTRON_NAME} glance keystone)
 
 start_timer
 # run tests
