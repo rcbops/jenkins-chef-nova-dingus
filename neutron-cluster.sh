@@ -74,6 +74,25 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable (not really needed in grizzly but no matter)
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
+# if we have been provided a chef cookbook tarball let's use it otherwise
+# upload the cookbooks the normal way.  If we have the tarball the upload
+# is initiated from the build server, otherwise all the work is done on the
+# chef-server VM
+if [[ ! -f ${COOKBOOKS_TARBALL} ]]; then
+  start_timer
+  x_with_server "uploading the cookbooks" "chef-server" <<EOF
+  checkout_cookbooks
+  run_twice upload_cookbooks
+  run_twice upload_roles
+EOF
+  background_task "fc_do"
+  stop_timer
+else
+  unpack_local_chef_tarball ${COOKBOOKS_TARBALL}
+  upload_local_chef_cookbooks chef-server
+  upload_local_chef_roles chef-server
+fi
+
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 flush_iptables
 install_chef_client
