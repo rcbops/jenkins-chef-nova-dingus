@@ -221,7 +221,8 @@ function update_package_provider() {
 
 function install_ovs_package() {
     if [ $PLATFORM = "debian" ]; then
-        install_package openvswitch-datapath-dkms
+        install_package linux-headers-$(uname -r)
+        install_package openvswitch-datapath-lts-raring-dkms
         install_package openvswitch-switch
     else
         install_package openvswitch
@@ -233,6 +234,19 @@ function install_package() {
         DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes "$@"
     else
         yum -y install "$@"
+    fi
+}
+
+function start_ovs_service() {
+    # we have to make sure the ovs service starts, because otherwise
+    # ovs-vsctl will hang infinitely waiting for the socket (newer versions
+    # of the client use a timeout by default).
+    #
+    script=/etc/init.d/openvswitch
+    [ $PLATFORM = "debian" ] && script=${script}-switch
+
+    if $script status |grep -qw 'not running'; then
+        $script start
     fi
 }
 

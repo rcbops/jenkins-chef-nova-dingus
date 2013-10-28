@@ -129,7 +129,7 @@ done
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 chef-client
 install_ovs_package
-/etc/init.d/openvswitch start || true
+start_ovs_service
 move_ip_to_ovs_bridge eth2
 EOF
 stop_timer
