@@ -74,6 +74,10 @@ create_chef_environment chef-server ${CHEF_ENV}
 # Set the package_component environment variable (not really needed in grizzly but no matter)
 knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 
+for i in ${cluster[@]}; do
+  role_add chef-server $i 'role[base]'
+done
+
 x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
 flush_iptables
 install_chef_client
@@ -83,8 +87,7 @@ template_client $(ip_for_host chef-server)
 chef-client
 EOF
 
-x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
-chef-client
+x_with_cluster "Installing OVS packages" ${cluster[@]} <<EOF
 install_ovs_package
 /etc/init.d/openvswitch start || true
 move_ip_to_ovs_bridge eth2
