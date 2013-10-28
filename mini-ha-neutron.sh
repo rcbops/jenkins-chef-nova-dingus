@@ -70,6 +70,7 @@ stop_timer
 
 start_timer
 x_with_cluster "Cluster booted.  Setting up the package providers and quantum networks" ${cluster[@]} <<EOF
+ubuntu_fixups
 plumb_quantum_networks eth1
 plumb_quantum_networks eth2
 # set_quantum_network_link_up eth2
@@ -126,7 +127,7 @@ for i in ${cluster[@]}; do
     role_add chef-server $i 'role[base]'
 done
 
-x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
+x_with_cluster "Installing chef-client and running with roles" ${cluster[@]} <<EOF
 chef-client
 install_ovs_package
 start_ovs_service

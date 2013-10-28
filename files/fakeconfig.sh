@@ -275,6 +275,13 @@ function rabbitmq_fixup() {
     fi
 }
 
+function ubuntu_fixups() {
+    if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
+        # make sure we have the latest liblockfile.
+        # see https://bugs.launchpad.net/ubuntu/+source/liblockfile/+bug/941968
+        install_package liblockfile
+    fi
+}
 
 function chef11_fixup() {
     sed -i 's/chef-server/'$(hostname)'.novalocal/g' /etc/chef-server/chef-server.rb
