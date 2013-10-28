@@ -279,7 +279,7 @@ function ubuntu_fixups() {
     if [ $PLATFORM = "debian" ] || [ $PLATFORM = "ubuntu" ]; then
         # make sure we have the latest liblockfile.
         # see https://bugs.launchpad.net/ubuntu/+source/liblockfile/+bug/941968
-        install_package liblockfile
+        install_package liblockfile1
     fi
 }
 
