@@ -2,7 +2,7 @@
 
 
 START_TIME=$(date +%s)
-PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
+PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-havana}
 CHEF_IMAGE=chef-template5
 
 source $(dirname $0)/chef-jenkins.sh
