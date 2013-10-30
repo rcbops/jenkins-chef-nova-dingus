@@ -90,6 +90,11 @@ cleanup_metadata_routes eth0 eth1
 fixup_hosts_file_for_quantum
 wait_for_rhn
 set_package_provider
+if [[ -e /etc/apt/sources.list ]]; then
+    if grep -v 'multiverse' /etc/apt/sources.list; then
+        echo "deb http://archive.ubuntu.com/ubuntu precise multiverse" >> /etc/apt/sources.list
+    fi
+fi
 update_package_provider
 run_twice install_package bridge-utils
 EOF
