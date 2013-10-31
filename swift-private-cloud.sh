@@ -286,11 +286,13 @@ fi
 # verify that servers in the swift network can relay through admin
 iptables -I OUTPUT 1 -p tcp -m tcp --dport 25 -j REJECT
 if [[ -e "/etc/redhat-release" ]]; then
-  su swiftops -c "pdsh -g swift mailx -s testing test@rackspace.com \</dev/null"  
+  su swiftops -c "pdsh -g swift mailx -s testing test@rackspace.com \</dev/null"
+  su swiftops -c "pdsh -g swift sudo exim -q -v"
 else
   su swiftops -c "dsh -Mcg swift mailx -s testing test@rackspace.com \</dev/null"
+  su swiftops -c "dsh -Mcg swift sudo exim -q -v"
 fi
-sleep 15
+sleep 5
 
 if [[ "\$(iptables -L OUTPUT 1 -v | xargs | cut -d' ' -f1)" -eq 0 ]]; then
   echo "Mail was not successfully relayed" 1>&2
