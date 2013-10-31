@@ -290,7 +290,7 @@ if [[ -e "/etc/redhat-release" ]]; then
 else
   su swiftops -c "dsh -Mcg swift mailx -s testing test@rackspace.com \</dev/null"
 fi
-sleep 5
+sleep 15
 
 if [[ "\$(iptables -L OUTPUT 1 -v | xargs | cut -d' ' -f1)" -eq 0 ]]; then
   echo "Mail was not successfully relayed" 1>&2
