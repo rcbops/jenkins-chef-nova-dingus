@@ -109,7 +109,7 @@
             "public": "192.168.0.0/24"
         }
     },
-    "name": "minicluster-neutron",
+    "name": "minicluster-quantum",
     "chef_type": "environment",
     "description": ""
 }

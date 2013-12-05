@@ -2,7 +2,7 @@
 
 
 START_TIME=$(date +%s)
-PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
+PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-havana}
 
 GRAB_LOGFILES_ON_FAILURE=1
 JOB_ARCHIVE_FILES="/var/log,/etc,/var/lib/nova/instances/*/*.xml,/var/lib/nova/instances/*/*.log}"

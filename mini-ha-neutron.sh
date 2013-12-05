@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
+NEUTRON_NAME=neutron
+if [ "${0##*/}" = "mini-ha-quantum.sh" ]; then
+    NEUTRON_NAME=quantum
+fi
 
 START_TIME=$(date +%s)
-PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-grizzly}
+PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-havana}
 
 GRAB_LOGFILES_ON_FAILURE=1
 JOB_ARCHIVE_FILES="/var/log,/etc,/var/lib/nova/instances/*/*.xml,/var/lib/nova/instances/*/*.log}"
@@ -12,7 +16,7 @@ source $(dirname $0)/chef-jenkins.sh
 print_banner "Initializing Job"
 init
 
-CHEF_ENV="minicluster-neutron"
+CHEF_ENV="minicluster-${NEUTRON_NAME}"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
@@ -66,6 +70,7 @@ stop_timer
 
 start_timer
 x_with_cluster "Cluster booted.  Setting up the package providers and quantum networks" ${cluster[@]} <<EOF
+ubuntu_fixups
 plumb_quantum_networks eth1
 plumb_quantum_networks eth2
 # set_quantum_network_link_up eth2
@@ -122,10 +127,10 @@ for i in ${cluster[@]}; do
     role_add chef-server $i 'role[base]'
 done
 
-x_with_cluster "Installing chef-client and running for the first time" ${cluster[@]} <<EOF
+x_with_cluster "Installing chef-client and running with roles" ${cluster[@]} <<EOF
 chef-client
 install_ovs_package
-/etc/init.d/openvswitch start || true
+start_ovs_service
 move_ip_to_ovs_bridge eth2
 EOF
 stop_timer
@@ -188,7 +193,7 @@ stop_timer
 retval=0
 
 # setup test list
-declare -a testlist=(cinder nova-neutron neutron glance keystone)
+declare -a testlist=(cinder nova-${NEUTRON_NAME} ${NEUTRON_NAME} glance keystone)
 
 start_timer
 # run tests
