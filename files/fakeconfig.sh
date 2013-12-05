@@ -222,7 +222,7 @@ function update_package_provider() {
 function install_ovs_package() {
     if [ $PLATFORM = "debian" ]; then
         install_package linux-headers-$(uname -r)
-        install_package openvswitch-datapath-lts-raring-dkms
+        install_package openvswitch-datapath-dkms
         install_package openvswitch-switch
     else
         install_package openvswitch
