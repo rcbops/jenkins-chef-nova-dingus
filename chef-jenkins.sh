@@ -738,6 +738,12 @@ function run_tests() {
     declare -A exerstacktests
     declare -A kongtests
 
+    if [[ ${version} == v4.1.* ]]; then
+      version="grizzly"
+    elif [[ ${version} == v4.2.* ]]; then
+      version="havana"
+    fi
+
     exerstacktests=(
         [nova]="euca.sh nova-cli.sh"
         [glance]="glance.sh"
@@ -747,6 +753,8 @@ function run_tests() {
         [ceilometer]="ceilometer.sh"
         [nova-neutron]="nova-neutron.sh"
         [neutron]="neutron-cli.sh"
+        [nova-neutron]="nova-quantum.sh"
+        [neutron]="quantum-cli.sh"
     )
 
     kongtests=(
