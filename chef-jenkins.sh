@@ -84,6 +84,29 @@ function setup_quantum_network() {
     quantum subnet-create --name "${JOBID}-vmnet" --no-gateway --dns-nameserver 8.8.8.8 "${JOBID}-vmnet" 192.168.50.0/24
 }
 
+function derive_openstack_version() {
+    # based on the branch name derive the version of openstack that we are
+    # testing against
+    local openstack_version="havana"
+    local branch=${GIT_BRANCH:-master}
+    if [[ ${branch} == v4.1.* ]] || [[ ${branch} == "grizzly" ]]; then
+      openstack_version="grizzly"
+    fi
+    echo ${openstack_version}
+}
+
+function derive_chef_environment() {
+    # based on the branch name that we are given derive a chef environment
+    # file to use for the environment.
+    local env_file="neutron"
+    local openstack_version=derive_openstack_version
+    if [[ ${openstack_version} == "grizzly" ]]; then
+      env_file="quantum"
+    fi
+    echo ${env_file}
+}
+
+
 function destroy_quantum_network() {
     if [ $USE_CS -eq 1 ]; then
         echo "This is why we can't have nice things"
@@ -738,11 +761,7 @@ function run_tests() {
     declare -A exerstacktests
     declare -A kongtests
 
-    if [[ ${version} == v4.1.* ]]; then
-      version="grizzly"
-    elif [[ ${version} == v4.2.* ]]; then
-      version="havana"
-    fi
+    local version = derive_openstack_version
 
     exerstacktests=(
         [nova]="euca.sh nova-cli.sh"
@@ -753,8 +772,8 @@ function run_tests() {
         [ceilometer]="ceilometer.sh"
         [nova-neutron]="nova-neutron.sh"
         [neutron]="neutron-cli.sh"
-        [nova-neutron]="nova-quantum.sh"
-        [neutron]="quantum-cli.sh"
+        [nova-quantum]="nova-quantum.sh"
+        [quantum]="quantum-cli.sh"
     )
 
     kongtests=(
