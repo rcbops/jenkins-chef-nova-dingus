@@ -99,7 +99,7 @@ function derive_chef_environment() {
     # based on the branch name that we are given derive a chef environment
     # file to use for the environment.
     local env_file="neutron"
-    local openstack_version=derive_openstack_version
+    local openstack_version=$(derive_openstack_version)
     if [[ ${openstack_version} == "grizzly" ]]; then
       env_file="quantum"
     fi
