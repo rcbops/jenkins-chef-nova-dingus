@@ -87,6 +87,9 @@ function setup_quantum_network() {
 function derive_openstack_version() {
     # based on the branch name derive the version of openstack that we are
     # testing against
+    #
+    # IMPORTANT! Change the default version of openstack here!
+    #
     local openstack_version="havana"
     local branch=${GIT_BRANCH:-master}
     if [[ ${branch} == v4.1.* ]] || [[ ${branch} == "grizzly" ]]; then
