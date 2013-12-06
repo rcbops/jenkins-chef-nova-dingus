@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 
-NEUTRON_NAME=neutron
-if [ "${0##*/}" = "mini-ha-quantum.sh" ]; then
-    NEUTRON_NAME=quantum
-fi
-
 START_TIME=$(date +%s)
-PACKAGE_COMPONENT=${PACKAGE_COMPONENT:-havana}
 
 GRAB_LOGFILES_ON_FAILURE=1
 JOB_ARCHIVE_FILES="/var/log,/etc,/var/lib/nova/instances/*/*.xml,/var/lib/nova/instances/*/*.log}"
@@ -16,7 +10,7 @@ source $(dirname $0)/chef-jenkins.sh
 print_banner "Initializing Job"
 init
 
-CHEF_ENV="minicluster-${NEUTRON_NAME}"
+CHEF_ENV="minicluster-$(derive_chef_environment)"
 print_banner "Build Parameters
 ~~~~~~~~~~~~~~~~
 environment = ${CHEF_ENV}
@@ -25,7 +19,8 @@ AVAILABILITY_ZONE=${AZ}
 TMPDIR = ${TMPDIR}
 GIT_PATCH_URL = ${GIT_PATCH_URL}
 GIT_MASTER_URL = ${GIT_MASTER_URL}
-We are building for ${PACKAGE_COMPONENT}"
+We are building branch ${GIT_MASTER_BRANCH}
+We are building on OpenStack $(derive_openstack_version)"
 
 rm -rf logs
 mkdir -p logs/run
@@ -88,8 +83,6 @@ print_banner "Setting up the chef environment"
 # at this point, chef server is done, cluster is up.
 # let's set up the environment.
 create_chef_environment chef-server ${CHEF_ENV}
-# Set the package_component environment variable (not really needed in grizzly but no matter)
-knife_set_package_component chef-server ${CHEF_ENV} ${PACKAGE_COMPONENT}
 stop_timer
 
 # if we have been provided a chef cookbook tarball let's use it otherwise
@@ -193,11 +186,11 @@ stop_timer
 retval=0
 
 # setup test list
-declare -a testlist=(cinder nova-${NEUTRON_NAME} ${NEUTRON_NAME} glance keystone)
+declare -a testlist=(cinder nova-neutron nova-quantum neutron quantum glance keystone)
 
 start_timer
 # run tests
-if ( ! run_tests api ${PACKAGE_COMPONENT} ${testlist[@]} ); then
+if ( ! run_tests api $(derive_openstack_version) ${testlist[@]} ); then
     echo "Tests failed."
     retval=1
 fi
