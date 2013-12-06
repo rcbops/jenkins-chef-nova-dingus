@@ -19,7 +19,7 @@ AVAILABILITY_ZONE=${AZ}
 TMPDIR = ${TMPDIR}
 GIT_PATCH_URL = ${GIT_PATCH_URL}
 GIT_MASTER_URL = ${GIT_MASTER_URL}
-We are building branch ${GIT_MASTER_BRANCH}
+We are building branch ${GIT_BRANCH}
 We are building on OpenStack $(derive_openstack_version)"
 
 rm -rf logs
