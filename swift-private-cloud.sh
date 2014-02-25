@@ -261,6 +261,7 @@ fi
 swift-recon --md5  | grep '^3/3 hosts matched'
 
 # verify dispersion reports are configured
+swift --os-auth-url http://$(ip_for_host admin1):5000/v2.0 --os-tenant-name dispersion --os-username reporter --os-password notautomaticallycreated stat
 swift-dispersion-populate
 swift-dispersion-report | grep '100.00%' | grep '6 of 6'
 
