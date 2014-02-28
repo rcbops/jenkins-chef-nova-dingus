@@ -285,6 +285,9 @@ function ubuntu_fixups() {
 
 function chef11_fixup() {
     sed -i 's/chef-server/'$(hostname)'.novalocal/g' /etc/chef-server/chef-server.rb
+    if [[ ! $(grep -w "^erchef\['s3_url_ttl'\]" /etc/chef-server/chef-server.rb) ]]; then
+        echo "erchef['s3_url_ttl'] = 3600" | tee -a /etc/chef-server/chef-server.rb
+    fi
     chef-server-ctl reconfigure
 }
 
